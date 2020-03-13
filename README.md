@@ -6,3 +6,5 @@ TODO:
 * Add HTTP Handler
 * Add Auth
 * Add Beacon Templates
+* Add Server-Beacon Communication
+* Add Client-Server Communication
