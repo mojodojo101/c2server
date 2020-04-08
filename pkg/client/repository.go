@@ -1,6 +1,6 @@
 package client
 
-import(
+import (
 	"context"
 	"time"
 
@@ -8,7 +8,9 @@ import(
 )
 
 type Repository interface {
-	GetByID(ctx context.Context,id int64)( *models.Client,error)
-	CreateNewClient(ctx context.Context,ip,name,password,token string,createdAt,updatedAt time.Time)(*models.Client,error)
-	CreateClientTable(ctx context.Context)(error)
+	GetByNameAndPassword(ctx context.Context, name, password string) (*models.Client, error)
+	UpdateCSRFToken(ctx context.Context, id int64, csrfToken string, updatedAt time.Time) error
+	CreateNewClient(ctx context.Context, c *models.Client) error
+	CreateTable(ctx context.Context) error
+	DropTable(ctx context.Context) error
 }

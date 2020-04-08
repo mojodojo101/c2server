@@ -12,11 +12,14 @@ type Client struct {
 	Password string	`json:"password"`
 
 	Token string	`json:"token"`
+	
+	CSRFToken string	`json:"csrf_token"`
 
 	CreatedAt time.Time	`json:"created_at"`
 
 	UpdatedAt time.Time	`json:"updated_at"`
 	
 }
+
 
 
