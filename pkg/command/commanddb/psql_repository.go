@@ -56,14 +56,20 @@ func (r *sqlCommandRepo) GetByTargetID(ctx context.Context, amount, targetId int
 
 }
 
+func (r *sqlCommandRepo) DeleteByID(ctx context.Context, id int64) error {
+	query := `DELETE from command WHERE id=$1`
+	_, err := r.execQuery(ctx, query, id)
+	return err
+}
+
 //i should change this stuff down the line
-func (r *sqlCommandRepo) UpdateByID(ctx context.Context, c *models.Command) error {
+func (r *sqlCommandRepo) Update(ctx context.Context, c *models.Command) error {
 	query := `Update command SET executed = TRUE , executed_at = $2 WHERE id=$1`
 	_, err := r.execQuery(ctx, query, c.Id, c.ExecutedAt)
 	return err
 }
 
-func (r *sqlCommandRepo) CreateNewCommand(ctx context.Context, c *models.Command) error {
+func (r *sqlCommandRepo) CreateNewCommand(ctx context.Context, c *models.Command) (int64, error) {
 	query := `INSERT INTO command VALUES ( nextval('command_id_seq') ,$1,$2,$3,$4,$5) returning id`
 
 	key, err := r.addItem(
@@ -78,12 +84,10 @@ func (r *sqlCommandRepo) CreateNewCommand(ctx context.Context, c *models.Command
 
 	if err != nil {
 		logrus.Error(err)
-		return err
+		return int64(0), err
 	}
 
-	c.Id = key
-
-	return nil
+	return key, nil
 
 }
 

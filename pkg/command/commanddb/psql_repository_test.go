@@ -79,7 +79,7 @@ func TestCreateNewCommand(t *testing.T) {
 		panic(err)
 	}
 
-	err = cr.CreateNewCommand(ctx, &c)
+	_, err = cr.CreateNewCommand(ctx, &c)
 	assert.NoError(t, err)
 	fmt.Printf("command: %#v\n\n", c)
 	return
@@ -132,6 +132,29 @@ func TestGetByTargetID(t *testing.T) {
 	for _, c := range *cs {
 		assert.NotEmpty(t, c)
 	}
+	assert.NoError(t, err)
+	return
+}
+func DeleteByID(t *testing.T) {
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+	ctx := context.Background()
+	cr := commanddb.NewSQLRepo(db)
+	err = cr.CreateTable(ctx)
+	if err != nil {
+		panic(err)
+	}
+	commandID := int64(1)
+	err = cr.DeleteByID(ctx, commandID)
+
 	assert.NoError(t, err)
 	return
 }

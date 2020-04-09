@@ -74,7 +74,7 @@ func TestCreateNewBeacon(t *testing.T) {
 	b.Arch = "x86"
 	b.Lang = "PE"
 
-	err = br.CreateNewBeacon(ctx, &b)
+	_, err = br.CreateNewBeacon(ctx, &b)
 	assert.NoError(t, err)
 	return
 

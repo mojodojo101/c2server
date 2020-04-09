@@ -65,7 +65,7 @@ func (r *sqlActiveBeaconRepo) GetByParentID(ctx context.Context, pId int64) (*mo
 
 func (r *sqlActiveBeaconRepo) DeleteByID(ctx context.Context, id int64) error {
 	//change this later mojo!!!!!!!
-	query := `SELECT * FROM active_beacon WHERE id=$1`
+	query := `SELECT FROM active_beacon WHERE id=$1`
 
 	_, err := r.execQuery(ctx, query, id)
 
@@ -95,7 +95,7 @@ func (r *sqlActiveBeaconRepo) Update(ctx context.Context, b *models.ActiveBeacon
 	return err
 
 }
-func (r *sqlActiveBeaconRepo) CreateNewBeacon(ctx context.Context, b *models.ActiveBeacon) error {
+func (r *sqlActiveBeaconRepo) CreateNewBeacon(ctx context.Context, b *models.ActiveBeacon) (int64, error) {
 
 	query := `INSERT INTO active_beacon VALUES ( nextval('active_beacon_id_seq') ,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) returning id`
 
@@ -117,12 +117,10 @@ func (r *sqlActiveBeaconRepo) CreateNewBeacon(ctx context.Context, b *models.Act
 
 	if err != nil {
 		logrus.Error(err)
-		return err
+		return int64(0), err
 	}
 
-	b.Id = key
-
-	return nil
+	return key, nil
 
 }
 

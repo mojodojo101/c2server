@@ -1,4 +1,4 @@
-package usecase
+package busecase
 
 import (
 	"context"
@@ -54,18 +54,18 @@ func (bu *beaconUsecase) GetByID(ctx context.Context, id int64) (*models.Beacon,
 
 }
 
-func (bu *beaconUsecase) Store(ctx context.Context, b *models.Beacon) error {
+func (bu *beaconUsecase) Store(ctx context.Context, b *models.Beacon) (int64, error) {
 	cctx, cancel := context.WithTimeout(ctx, bu.contextTimeout)
 	defer cancel()
 	existingBeacon, _ := bu.GetByID(cctx, b.Id)
 	if existingBeacon != nil {
-		return models.ErrDuplicate
+		return int64(0), models.ErrDuplicate
 	}
-	err := bu.beaconRepo.CreateNewBeacon(cctx, b)
+	id, err := bu.beaconRepo.CreateNewBeacon(cctx, b)
 	if err != nil {
-		return err
+		return int64(0), err
 	}
-	return nil
+	return id, nil
 
 }
 

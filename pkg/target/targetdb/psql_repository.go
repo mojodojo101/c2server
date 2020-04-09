@@ -64,7 +64,7 @@ func (r *sqlTargetRepo) Update(ctx context.Context, t *models.Target) error {
 	return err
 }
 
-func (r *sqlTargetRepo) CreateNewTarget(ctx context.Context, t *models.Target) error {
+func (r *sqlTargetRepo) CreateNewTarget(ctx context.Context, t *models.Target) (int64, error) {
 
 	query := `INSERT INTO target VALUES ( nextval('target_id_seq') ,$1,$2,$3,$4,$5,$6,$7) returning id`
 
@@ -81,12 +81,10 @@ func (r *sqlTargetRepo) CreateNewTarget(ctx context.Context, t *models.Target) e
 
 	if err != nil {
 		logrus.Error(err)
-		return err
+		return int64(0), err
 	}
 
-	t.Id = key
-
-	return nil
+	return key, nil
 
 }
 

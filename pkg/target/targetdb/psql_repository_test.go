@@ -80,7 +80,7 @@ func TestCreateNewTarget(t *testing.T) {
 	ta.CreatedAt = time.Now()
 	ta.UpdatedAt = time.Now()
 
-	err = br.CreateNewTarget(ctx, &ta)
+	_, err = br.CreateNewTarget(ctx, &ta)
 	assert.NoError(t, err)
 	return
 

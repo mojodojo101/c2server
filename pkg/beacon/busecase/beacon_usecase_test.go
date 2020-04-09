@@ -1,11 +1,11 @@
-package usecase_test
+package busecase_test
 
 import (
 	"context"
 	"database/sql"
 	"github.com/mojodojo101/c2server/pkg/beacon/beacondb"
 
-	"github.com/mojodojo101/c2server/pkg/beacon/usecase"
+	"github.com/mojodojo101/c2server/pkg/beacon/busecase"
 	"github.com/stretchr/testify/assert"
 
 	_ "github.com/lib/pq"
@@ -45,7 +45,7 @@ func TestStore(t *testing.T) {
 	b.Id = 1
 	b.Lang = "bin"
 	b.Path = "/root/go/src/github.com/mojodojo101/c2server/internal_resources/beacons/callHome32.dll"
-	err = bu.Store(ctx, &b)
+	_, err = bu.Store(ctx, &b)
 	assert.Error(t, err)
 
 }

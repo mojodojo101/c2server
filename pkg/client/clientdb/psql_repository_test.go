@@ -80,7 +80,7 @@ func TestCreateNewClient(t *testing.T) {
 	c.UpdatedAt = time.Now()
 	c.CreatedAt = time.Now()
 
-	err = br.CreateNewClient(ctx, &c)
+	_, err = br.CreateNewClient(ctx, &c)
 	assert.NoError(t, err)
 	return
 
@@ -97,16 +97,49 @@ func TestGetByID(t *testing.T) {
 		panic(err)
 	}
 	ctx := context.Background()
-	br := clientdb.NewSQLRepo(db)
-	err = br.CreateTable(ctx)
+	cr := clientdb.NewSQLRepo(db)
+	err = cr.CreateTable(ctx)
 	if err != nil {
 		panic(err)
 	}
-	id := int64(1)
-	b, err := br.GetByID(ctx, id)
+	name := "mojo2"
+	password := "mojodojo101+"
+
+	c, err := cr.GetByNameAndPassword(ctx, name, password)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, b)
+	assert.NotEmpty(t, c)
 	return
+}
+
+func TestUpdate(t *testing.T) {
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+	ctx := context.Background()
+	cr := clientdb.NewSQLRepo(db)
+	err = cr.CreateTable(ctx)
+	if err != nil {
+		panic(err)
+	}
+	c := models.Client{}
+	c.Id = 1
+	c.Ip = "127.0.0.1"
+	c.Name = "mojo2"
+	c.Password = "mojodojo101+"
+	c.Token = "myawesometoken"
+	c.CSRFToken = "327837190283789021790821"
+	c.UpdatedAt = time.Now()
+	c.CreatedAt = time.Now()
+
+	err = cr.Update(ctx, &c)
+	assert.NoError(t, err)
 }
 
 func TestUpdateHostName(t *testing.T) {
@@ -132,7 +165,6 @@ func TestUpdateHostName(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-/*
 func TestDeleteByID(t *testing.T) {
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -145,13 +177,12 @@ func TestDeleteByID(t *testing.T) {
 		panic(err)
 	}
 	ctx := context.Background()
-	br := clientdb.NewSQLRepo(db)
-	err = br.CreateTable(ctx)
+	cr := clientdb.NewSQLRepo(db)
+	err = cr.CreateTable(ctx)
 	if err != nil {
 		panic(err)
 	}
 	id := int64(1)
-	err = br.DeleteByID(ctx, id)
+	err = cr.DeleteByID(ctx, id)
 	assert.NoError(t, err)
 }
-*/

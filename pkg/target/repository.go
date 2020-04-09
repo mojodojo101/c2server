@@ -9,7 +9,7 @@ import (
 type Repository interface {
 	GetByID(ctx context.Context, id int64) (*models.Target, error)
 	DeleteByID(ctx context.Context, id int64) error
-	CreateNewTarget(ctx context.Context, t *models.Target) error
+	CreateNewTarget(ctx context.Context, t *models.Target) (int64, error)
 
 	// i changed this from updatecmdid and update hostname just to keep it a bit simpler for now
 	// will be worth reimplementing if i actually extend this simple c2

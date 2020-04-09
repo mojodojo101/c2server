@@ -31,27 +31,6 @@ func TestCreateTable(t *testing.T) {
 	return
 }
 
-func TestDropTable(t *testing.T) {
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-	ctx := context.Background()
-	br := activebeacondb.NewSQLRepo(db)
-	err = br.CreateTable(ctx)
-	if err != nil {
-		panic(err)
-	}
-	br.DropTable(ctx)
-	assert.NoError(t, err)
-	return
-}
 func TestCreateNewActiveBeacon(t *testing.T) {
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -70,15 +49,17 @@ func TestCreateNewActiveBeacon(t *testing.T) {
 		panic(err)
 	}
 	ab := models.ActiveBeacon{}
-	ab.BId = 0
+	ab.Id = 0
+	ab.BId = 1
 	ab.C2m = models.HTTP
 	ab.TId = 1
 	ab.CmdId = 1
-	ab.Ping = 0.0
+	ab.Ping = float64(10.0)
 	ab.CreatedAt = time.Now()
 	ab.UpdatedAt = time.Now()
 
-	err = br.CreateNewBeacon(ctx, &ab)
+	_, err = br.CreateNewBeacon(ctx, &ab)
+
 	assert.NoError(t, err)
 	return
 
@@ -126,4 +107,26 @@ func TestDeleteByID(t *testing.T) {
 	id := int64(1)
 	err = br.DeleteByID(ctx, id)
 	assert.NoError(t, err)
+}
+
+func TestDropTable(t *testing.T) {
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+	ctx := context.Background()
+	br := activebeacondb.NewSQLRepo(db)
+	err = br.CreateTable(ctx)
+	if err != nil {
+		panic(err)
+	}
+	br.DropTable(ctx)
+	assert.NoError(t, err)
+	return
 }

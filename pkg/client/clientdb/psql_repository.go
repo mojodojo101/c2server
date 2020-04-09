@@ -50,16 +50,30 @@ func (r *sqlClientRepo) DropTable(ctx context.Context) error {
 	return err
 }
 
+func (r *sqlClientRepo) GetByID(ctx context.Context, id int64) (*models.Client, error) {
+	query := `SELECT * FROM client WHERE id=$1`
+	return r.getOneItem(ctx, query, id)
+}
 func (r *sqlClientRepo) GetByNameAndPassword(ctx context.Context, name, password string) (*models.Client, error) {
 	query := `SELECT * FROM client WHERE name=$1 and password=$2`
 	return r.getOneItem(ctx, query, name, password)
+}
+func (r *sqlClientRepo) DeleteByID(ctx context.Context, id int64) error {
+	query := `DELETE FROM client WHERE id=$1`
+	_, err := r.execQuery(ctx, query, id)
+	return err
 }
 func (r *sqlClientRepo) UpdateCSRFToken(ctx context.Context, id int64, csrfToken string, updatedAt time.Time) error {
 	query := `UPDATE client SET csrf_token= $2 ,updated_at = $3 WHERE id=$1`
 	_, err := r.execQuery(ctx, query, id, csrfToken, updatedAt)
 	return err
 }
-func (r *sqlClientRepo) CreateNewClient(ctx context.Context, c *models.Client) error {
+func (r *sqlClientRepo) Update(ctx context.Context, c *models.Client) error {
+	query := `UPDATE client SET ip=$2,name=$3,password=$4,token=$5,csrf_token=$6,updated_at=$7 WHERE id=$1`
+	_, err := r.execQuery(ctx, query, c.Id, c.Ip, c.Name, c.Password, c.Token, c.CSRFToken, c.UpdatedAt)
+	return err
+}
+func (r *sqlClientRepo) CreateNewClient(ctx context.Context, c *models.Client) (int64, error) {
 	query := `INSERT INTO client VALUES ( nextval('client_id_seq') ,$1,$2,$3,$4,$5,$6,$7) returning id`
 
 	key, err := r.addItem(
@@ -75,12 +89,12 @@ func (r *sqlClientRepo) CreateNewClient(ctx context.Context, c *models.Client) e
 
 	if err != nil {
 		logrus.Error(err)
-		return err
+		return int64(0), err
 	}
 
 	c.Id = key
 
-	return nil
+	return key, nil
 
 }
 
