@@ -29,9 +29,10 @@ func (r *sqlCommandRepo) CreateTable(ctx context.Context) error {
 
 	query := `CREATE TABLE IF NOT EXISTS command (
 		id BIGSERIAL PRIMARY KEY,
-		target_id BIGINT,
+		t_id BIGINT,
 		cmd char(4096),
 		executed BOOL,
+		executing BOOL,
 		created_at TIMESTAMP,
 		executed_at TIMESTAMP)`
 	_, err := r.execQuery(ctx, query)
@@ -50,8 +51,13 @@ func (r *sqlCommandRepo) GetByID(ctx context.Context, id int64) (*models.Command
 	query := `SELECT * FROM command WHERE id=$1`
 	return r.getOneItem(ctx, query, id)
 }
+
+func (r *sqlCommandRepo) GetNextCommand(ctx context.Context, targetId int64) (*models.Command, error) {
+	query := `SELECT * FROM command WHERE t_id=$1 and executing=FALSE`
+	return r.getOneItem(ctx, query, targetId)
+}
 func (r *sqlCommandRepo) GetByTargetID(ctx context.Context, amount, targetId int64) (*[]models.Command, error) {
-	query := `SELECT * FROM command WHERE target_id=$1`
+	query := `SELECT * FROM command WHERE t_id=$1`
 	return r.getItemsByValue(ctx, query, amount, targetId)
 
 }
@@ -64,13 +70,13 @@ func (r *sqlCommandRepo) DeleteByID(ctx context.Context, id int64) error {
 
 //i should change this stuff down the line
 func (r *sqlCommandRepo) Update(ctx context.Context, c *models.Command) error {
-	query := `Update command SET executed = TRUE , executed_at = $2 WHERE id=$1`
-	_, err := r.execQuery(ctx, query, c.Id, c.ExecutedAt)
+	query := `Update command SET executing=$2 ,executed = $3, executed_at = $4 WHERE id=$1`
+	_, err := r.execQuery(ctx, query, c.Id, c.Executing, c.Executed, c.ExecutedAt)
 	return err
 }
 
-func (r *sqlCommandRepo) CreateNewCommand(ctx context.Context, c *models.Command) (int64, error) {
-	query := `INSERT INTO command VALUES ( nextval('command_id_seq') ,$1,$2,$3,$4,$5) returning id`
+func (r *sqlCommandRepo) CreateNewCommand(ctx context.Context, c *models.Command) error {
+	query := `INSERT INTO command VALUES ( nextval('command_id_seq') ,$1,$2,$3,$4,$5,$6) returning id`
 
 	key, err := r.addItem(
 		ctx,
@@ -78,16 +84,16 @@ func (r *sqlCommandRepo) CreateNewCommand(ctx context.Context, c *models.Command
 		&c.TId,
 		&c.Cmd,
 		&c.Executed,
+		&c.Executing,
 		&c.CreatedAt,
 		&c.ExecutedAt,
 	)
 
 	if err != nil {
 		logrus.Error(err)
-		return int64(0), err
 	}
-
-	return key, nil
+	c.Id = key
+	return err
 
 }
 
@@ -109,6 +115,7 @@ func (r *sqlCommandRepo) getOneItem(ctx context.Context, query string, args ...i
 		&c.TId,
 		&c.Cmd,
 		&c.Executed,
+		&c.Executing,
 		&c.CreatedAt,
 		&c.ExecutedAt,
 	)
@@ -135,6 +142,7 @@ func (r *sqlCommandRepo) getItemsByValue(ctx context.Context, query string, amou
 			&cs[i].TId,
 			&cs[i].Cmd,
 			&cs[i].Executed,
+			&cs[i].Executing,
 			&cs[i].CreatedAt,
 			&cs[i].ExecutedAt,
 		)

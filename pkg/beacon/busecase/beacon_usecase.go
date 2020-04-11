@@ -54,18 +54,16 @@ func (bu *beaconUsecase) GetByID(ctx context.Context, id int64) (*models.Beacon,
 
 }
 
-func (bu *beaconUsecase) Store(ctx context.Context, b *models.Beacon) (int64, error) {
+func (bu *beaconUsecase) Store(ctx context.Context, b *models.Beacon) error {
 	cctx, cancel := context.WithTimeout(ctx, bu.contextTimeout)
 	defer cancel()
 	existingBeacon, _ := bu.GetByID(cctx, b.Id)
 	if existingBeacon != nil {
-		return int64(0), models.ErrDuplicate
+		return models.ErrDuplicate
 	}
-	id, err := bu.beaconRepo.CreateNewBeacon(cctx, b)
-	if err != nil {
-		return int64(0), err
-	}
-	return id, nil
+	err := bu.beaconRepo.CreateNewBeacon(cctx, b)
+
+	return err
 
 }
 

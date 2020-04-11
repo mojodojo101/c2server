@@ -30,7 +30,6 @@ func (r *sqlTargetRepo) CreateTable(ctx context.Context) error {
 		ipv6 CHAR(39),
 		host_name CHAR(128),
 		path CHAR(128),
-		cmd_id BIGINT,
 		created_at TIMESTAMP,
 		updated_at TIMESTAMP)`
 	_, err := r.execQuery(ctx, query)
@@ -49,7 +48,10 @@ func (r *sqlTargetRepo) GetByID(ctx context.Context, id int64) (*models.Target, 
 	query := `SELECT * FROM target WHERE id=$1`
 	return r.getOneItem(ctx, query, id)
 }
-
+func (r *sqlTargetRepo) GetByIpv4(ctx context.Context, ipv4 string) (*models.Target, error) {
+	query := `SELECT * FROM target WHERE ipv4=$1`
+	return r.getOneItem(ctx, query, ipv4)
+}
 func (r *sqlTargetRepo) DeleteByID(ctx context.Context, id int64) error {
 	query := `DELETE FROM target WHERE id=$1`
 	_, err := r.execQuery(ctx, query, id)
@@ -57,16 +59,16 @@ func (r *sqlTargetRepo) DeleteByID(ctx context.Context, id int64) error {
 }
 
 func (r *sqlTargetRepo) Update(ctx context.Context, t *models.Target) error {
-	query := `UPDATE target SET ipv4=$2,ipv6=$3,host_name=$4,path=$5,cmd_id=$6,updated_at=$7 WHERE id=$1`
+	query := `UPDATE target SET ipv4=$2,ipv6=$3,host_name=$4,path=$5,updated_at=$6 WHERE id=$1`
 
-	_, err := r.execQuery(ctx, query, t.Id, t.Ipv4, t.Ipv6, t.HostName, t.Path, t.CmdId, t.UpdatedAt)
+	_, err := r.execQuery(ctx, query, t.Id, t.Ipv4, t.Ipv6, t.HostName, t.Path, t.UpdatedAt)
 
 	return err
 }
 
-func (r *sqlTargetRepo) CreateNewTarget(ctx context.Context, t *models.Target) (int64, error) {
+func (r *sqlTargetRepo) CreateNewTarget(ctx context.Context, t *models.Target) error {
 
-	query := `INSERT INTO target VALUES ( nextval('target_id_seq') ,$1,$2,$3,$4,$5,$6,$7) returning id`
+	query := `INSERT INTO target VALUES ( nextval('target_id_seq') ,$1,$2,$3,$4,$5,$6) returning id`
 
 	key, err := r.addItem(
 		ctx,
@@ -75,16 +77,14 @@ func (r *sqlTargetRepo) CreateNewTarget(ctx context.Context, t *models.Target) (
 		&t.Ipv6,
 		&t.HostName,
 		&t.Path,
-		&t.CmdId,
 		&t.CreatedAt,
 		&t.UpdatedAt)
 
 	if err != nil {
 		logrus.Error(err)
-		return int64(0), err
 	}
-
-	return key, nil
+	t.Id = key
+	return nil
 
 }
 
@@ -107,7 +107,6 @@ func (r *sqlTargetRepo) getOneItem(ctx context.Context, query string, args ...in
 		&t.Ipv6,
 		&t.HostName,
 		&t.Path,
-		&t.CmdId,
 		&t.CreatedAt,
 		&t.UpdatedAt,
 	)

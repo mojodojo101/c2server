@@ -10,6 +10,6 @@ type Usecase interface {
 	SignIn(ctx context.Context, name, password string) (*models.Client, error)
 	Delete(ctx context.Context, c *models.Client) error
 	Update(ctx context.Context, c *models.Client) error
-	Store(ctx context.Context, c *models.Client) (int64, error)
+	Store(ctx context.Context, c *models.Client) error
 	CreateTable(ctx context.Context) error
 }

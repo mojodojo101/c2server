@@ -53,7 +53,7 @@ func (r *sqlBeaconRepo) DeleteByID(ctx context.Context, id int64) error {
 	return err
 }
 
-func (r *sqlBeaconRepo) CreateNewBeacon(ctx context.Context, b *models.Beacon) (int64, error) {
+func (r *sqlBeaconRepo) CreateNewBeacon(ctx context.Context, b *models.Beacon) error {
 	query := `INSERT INTO beacon VALUES ( nextval('beacon_id_seq') ,$1,$2,$3,$4) returning id`
 
 	key, err := r.addItem(
@@ -67,10 +67,10 @@ func (r *sqlBeaconRepo) CreateNewBeacon(ctx context.Context, b *models.Beacon) (
 
 	if err != nil {
 		logrus.Error(err)
-		return int64(0), err
 	}
+	b.Id = key
 
-	return key, nil
+	return nil
 
 }
 

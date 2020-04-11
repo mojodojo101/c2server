@@ -11,13 +11,14 @@ import (
 
 	"github.com/mojodojo101/c2server/pkg/activebeacon/abusecase"
 	"github.com/mojodojo101/c2server/pkg/activebeacon/activebeacondb"
-	"github.com/mojodojo101/c2server/pkg/beacon/beacondb"
-	"github.com/mojodojo101/c2server/pkg/beacon/busecase"
-	"github.com/mojodojo101/c2server/pkg/client/clientdb"
-	"github.com/mojodojo101/c2server/pkg/client/cusecase"
+	"github.com/mojodojo101/c2server/pkg/activebeacon/delivery/abhttp"
+
+	_ "github.com/mojodojo101/c2server/pkg/beacon/beacondb"
+	_ "github.com/mojodojo101/c2server/pkg/beacon/busecase"
+	_ "github.com/mojodojo101/c2server/pkg/client/clientdb"
+	_ "github.com/mojodojo101/c2server/pkg/client/cusecase"
 	"github.com/mojodojo101/c2server/pkg/command/cmdusecase"
 	"github.com/mojodojo101/c2server/pkg/command/commanddb"
-	"github.com/mojodojo101/c2server/pkg/handlers"
 	_ "github.com/mojodojo101/c2server/pkg/models"
 	"github.com/mojodojo101/c2server/pkg/target/targetdb"
 	"github.com/mojodojo101/c2server/pkg/target/tusecase"
@@ -44,28 +45,28 @@ func main() {
 
 	//init client repo
 	ctx := context.Background()
-	cr := clientdb.NewSQLRepo(db)
-	err = cr.CreateTable(ctx)
-	if err != nil {
-		panic(err)
-	}
+	//cr := clientdb.NewSQLRepo(db)
+	//err = cr.CreateTable(ctx)
+	//if err != nil {
+	//	panic(err)
+	//}
 	//init client usecase
-	cu := cusecase.NewClientUsecase(cr, timeout)
-	if err != nil {
-		panic(err)
-	}
+	//cu := cusecase.NewClientUsecase(cr, timeout)
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	//init beacon repo
-	br := beacondb.NewSQLRepo(db)
-	err = br.CreateTable(ctx)
-	if err != nil {
-		panic(err)
-	}
+	//br := beacondb.NewSQLRepo(db)
+	//err = br.CreateTable(ctx)
+	//if err != nil {
+	//	panic(err)
+	//}
 	//init beacon usecase
-	bu := busecase.NewBeaconUsecase(br, timeout)
-	if err != nil {
-		panic(err)
-	}
+	///bu := busecase.NewBeaconUsecase(br, timeout)
+	///if err != nil {
+	///	panic(err)
+	///}
 
 	//init command repo
 	cmdr := commanddb.NewSQLRepo(db)
@@ -86,7 +87,7 @@ func main() {
 		panic(err)
 	}
 	//init target usecase
-	tu := tusecase.NewTargetUsecase(tr, cmdr, timeout)
+	tu := tusecase.NewTargetUsecase(tr, cmdu, timeout)
 	if err != nil {
 		panic(err)
 	}
@@ -98,14 +99,13 @@ func main() {
 		panic(err)
 	}
 	//init activebeacon usecase
-	au := abusecase.NewActiveBeaconUsecase(ar, timeout)
+	au := abusecase.NewActiveBeaconUsecase(ar, tu, timeout)
 	if err != nil {
 		panic(err)
 	}
 
-	ch := handlers.NewClientHandler(au, tu, cmdu, cu, bu)
-
-	http.ListenAndServe(":80", ch)
+	abh := abhttp.NewHandler(au)
+	http.ListenAndServe(":80", &abh)
 	//fmt.Printf("%#v\n", ch)
 	//fmt.Println("sometext")
 

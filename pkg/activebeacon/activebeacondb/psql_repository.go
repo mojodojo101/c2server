@@ -31,8 +31,8 @@ func (r *sqlActiveBeaconRepo) CreateTable(ctx context.Context) error {
 		p_id BIGINT,
 		t_id BIGINT REFERENCES target(id),
 		cmd_id BIGINT,
-		token CHAR(128),
 		cmd CHAR(4096),
+		token CHAR(128),
 		ping FLOAT(53),
 		c2m INT,
 		pm INT,
@@ -75,15 +75,15 @@ func (r *sqlActiveBeaconRepo) DeleteByID(ctx context.Context, id int64) error {
 
 func (r *sqlActiveBeaconRepo) Update(ctx context.Context, b *models.ActiveBeacon) error {
 
-	query := `Update active_beacon $1,$2,$3,$4,$5,$6,$7,$7,$8,$9,$10,$11 where id = $12`
+	query := `Update active_beacon set b_id=$1,p_id=$2,t_id=$3,cmd_id=$4,cmd=$5,token=$6,ping=$7,c2m=$8,pm=$9,missed_pings=$10,created_at=$11,updated_at=$12 where id = $13`
 
 	_, err := r.execQuery(ctx, query,
 		&b.BId,
 		&b.PId,
 		&b.TId,
 		&b.CmdId,
-		&b.Token,
 		&b.Cmd,
+		&b.Token,
 		&b.Ping,
 		&b.C2m,
 		&b.Pm,
@@ -95,7 +95,7 @@ func (r *sqlActiveBeaconRepo) Update(ctx context.Context, b *models.ActiveBeacon
 	return err
 
 }
-func (r *sqlActiveBeaconRepo) CreateNewBeacon(ctx context.Context, b *models.ActiveBeacon) (int64, error) {
+func (r *sqlActiveBeaconRepo) CreateNewBeacon(ctx context.Context, b *models.ActiveBeacon) error {
 
 	query := `INSERT INTO active_beacon VALUES ( nextval('active_beacon_id_seq') ,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) returning id`
 
@@ -106,8 +106,8 @@ func (r *sqlActiveBeaconRepo) CreateNewBeacon(ctx context.Context, b *models.Act
 		&b.PId,
 		&b.TId,
 		&b.CmdId,
-		&b.Token,
 		&b.Cmd,
+		&b.Token,
 		&b.Ping,
 		&b.C2m,
 		&b.Pm,
@@ -117,10 +117,10 @@ func (r *sqlActiveBeaconRepo) CreateNewBeacon(ctx context.Context, b *models.Act
 
 	if err != nil {
 		logrus.Error(err)
-		return int64(0), err
+		return err
 	}
-
-	return key, nil
+	b.Id = key
+	return nil
 
 }
 
@@ -143,8 +143,8 @@ func (r *sqlActiveBeaconRepo) getOneItem(ctx context.Context, query string, args
 		&b.PId,
 		&b.TId,
 		&b.CmdId,
-		&b.Token,
 		&b.Cmd,
+		&b.Token,
 		&b.Ping,
 		&b.C2m,
 		&b.Pm,

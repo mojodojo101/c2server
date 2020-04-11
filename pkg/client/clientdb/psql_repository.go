@@ -73,7 +73,7 @@ func (r *sqlClientRepo) Update(ctx context.Context, c *models.Client) error {
 	_, err := r.execQuery(ctx, query, c.Id, c.Ip, c.Name, c.Password, c.Token, c.CSRFToken, c.UpdatedAt)
 	return err
 }
-func (r *sqlClientRepo) CreateNewClient(ctx context.Context, c *models.Client) (int64, error) {
+func (r *sqlClientRepo) CreateNewClient(ctx context.Context, c *models.Client) error {
 	query := `INSERT INTO client VALUES ( nextval('client_id_seq') ,$1,$2,$3,$4,$5,$6,$7) returning id`
 
 	key, err := r.addItem(
@@ -89,12 +89,11 @@ func (r *sqlClientRepo) CreateNewClient(ctx context.Context, c *models.Client) (
 
 	if err != nil {
 		logrus.Error(err)
-		return int64(0), err
 	}
 
 	c.Id = key
 
-	return key, nil
+	return err
 
 }
 

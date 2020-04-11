@@ -24,10 +24,7 @@ func (cu *clientUsecase) CreateTable(ctx context.Context) error {
 	defer cancel()
 	err := cu.clientRepo.CreateTable(cctx)
 
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 
 }
 
@@ -55,26 +52,22 @@ func (cu *clientUsecase) SignIn(ctx context.Context, name, password string) (*mo
 	defer cancel()
 
 	c, err := cu.clientRepo.GetByNameAndPassword(cctx, name, password)
-	if err != nil {
-		return nil, err
-	}
-	return c, nil
+
+	return c, err
 
 }
 
-func (cu *clientUsecase) Store(ctx context.Context, c *models.Client) (int64, error) {
+func (cu *clientUsecase) Store(ctx context.Context, c *models.Client) error {
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
 	defer cancel()
 	existingClient, _ := cu.clientRepo.GetByID(cctx, c.Id)
 	if existingClient != nil {
-		return int64(0), models.ErrDuplicate
+		return models.ErrDuplicate
 	}
 
-	id, err := cu.clientRepo.CreateNewClient(cctx, c)
-	if err != nil {
-		return int64(0), err
-	}
-	return id, nil
+	err := cu.clientRepo.CreateNewClient(cctx, c)
+
+	return err
 
 }
 
@@ -85,20 +78,21 @@ func (cu *clientUsecase) Delete(ctx context.Context, c *models.Client) error {
 	if err != nil {
 		return err
 	}
-	return nil
+	err = cu.clientRepo.DeleteByID(cctx, c.Id)
+
+	return err
 
 }
 func (cu *clientUsecase) Update(ctx context.Context, c *models.Client) error {
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
 	defer cancel()
-	_, err := cu.clientRepo.GetByID(cctx, c.Id)
-	if err != nil {
-		return models.ErrItemNotFound
-	}
-	err = cu.clientRepo.Update(cctx, c)
+	err := cu.isValidClient(cctx, cancel, c)
 	if err != nil {
 		return err
 	}
-	return nil
+
+	err = cu.clientRepo.Update(cctx, c)
+
+	return err
 
 }

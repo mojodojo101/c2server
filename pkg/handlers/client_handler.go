@@ -8,6 +8,7 @@ import (
 	_ "github.com/mojodojo101/c2server/pkg/models"
 	"github.com/mojodojo101/c2server/pkg/target"
 	"io"
+	"encoding/json"
 	"net/http"
 )
 
@@ -33,12 +34,10 @@ func NewClientHandler(ab activebeacon.Usecase, t target.Usecase, cmd command.Use
 	}
 }
 
-
 func (ch *ClientHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	
 }
 
-
-
-
 func (ch *ClientHandler) addTarget() error {
-
+	ch.
+}

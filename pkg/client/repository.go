@@ -13,7 +13,7 @@ type Repository interface {
 	GetByID(ctx context.Context, id int64) (*models.Client, error)
 	UpdateCSRFToken(ctx context.Context, id int64, csrfToken string, updatedAt time.Time) error
 	Update(ctx context.Context, c *models.Client) error
-	CreateNewClient(ctx context.Context, c *models.Client) (int64, error)
+	CreateNewClient(ctx context.Context, c *models.Client) error
 	CreateTable(ctx context.Context) error
 	DropTable(ctx context.Context) error
 }

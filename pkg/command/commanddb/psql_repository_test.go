@@ -3,7 +3,6 @@ package commanddb_test
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/mojodojo101/c2server/pkg/command/commanddb"
 	"github.com/mojodojo101/c2server/pkg/models"
@@ -65,11 +64,44 @@ func TestCreateNewCommand(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	for i := 0; i < 10; i++ {
+		c := models.Command{}
+		c.Id = 1
+		c.TId = 1
+		c.Cmd = "start calc.exe"
+		c.Executed = false
+		c.CreatedAt = time.Now()
+		c.ExecutedAt = time.Time{}
+		ctx := context.Background()
+		cr := commanddb.NewSQLRepo(db)
+		err = cr.CreateTable(ctx)
+		if err != nil {
+			panic(err)
+		}
+
+		err = cr.CreateNewCommand(ctx, &c)
+		assert.NoError(t, err)
+	}
+	return
+
+}
+func TestUpdate(t *testing.T) {
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
 	c := models.Command{}
 	c.Id = 1
 	c.TId = 1
 	c.Cmd = "start calc.exe"
 	c.Executed = false
+	c.Executing = true
 	c.CreatedAt = time.Now()
 	c.ExecutedAt = time.Time{}
 	ctx := context.Background()
@@ -79,12 +111,12 @@ func TestCreateNewCommand(t *testing.T) {
 		panic(err)
 	}
 
-	_, err = cr.CreateNewCommand(ctx, &c)
+	err = cr.Update(ctx, &c)
 	assert.NoError(t, err)
-	fmt.Printf("command: %#v\n\n", c)
 	return
 
 }
+
 func TestGetByID(t *testing.T) {
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -106,6 +138,29 @@ func TestGetByID(t *testing.T) {
 	c, err := cr.GetByID(ctx, id)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, c)
+	return
+}
+func TestGetNextCommandToExecute(t *testing.T) {
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+	ctx := context.Background()
+	cr := commanddb.NewSQLRepo(db)
+	err = cr.CreateTable(ctx)
+	if err != nil {
+		panic(err)
+	}
+	targetId := int64(1)
+	cs, err := cr.GetNextCommand(ctx, targetId)
+	assert.NotEmpty(t, cs)
+	assert.NoError(t, err)
 	return
 }
 

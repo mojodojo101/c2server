@@ -24,7 +24,7 @@ func TestCreateTable(t *testing.T) {
 	}
 	br := beacondb.NewSQLRepo(db)
 	ctx := context.Background()
-	bu := usecase.NewBeaconUsecase(br, time.Second*10)
+	bu := busecase.NewBeaconUsecase(br, time.Second*10)
 	err = bu.CreateTable(ctx)
 	assert.NoError(t, err)
 
@@ -39,13 +39,13 @@ func TestStore(t *testing.T) {
 	br := beacondb.NewSQLRepo(db)
 	ctx := context.Background()
 
-	bu := usecase.NewBeaconUsecase(br, time.Second*2)
+	bu := busecase.NewBeaconUsecase(br, time.Second*2)
 	b := models.Beacon{}
 	b.Arch = "x86"
 	b.Id = 1
 	b.Lang = "bin"
 	b.Path = "/root/go/src/github.com/mojodojo101/c2server/internal_resources/beacons/callHome32.dll"
-	_, err = bu.Store(ctx, &b)
+	err = bu.Store(ctx, &b)
 	assert.Error(t, err)
 
 }
@@ -57,7 +57,7 @@ func TestRetrieveBeaconBuffer(t *testing.T) {
 	br := beacondb.NewSQLRepo(db)
 	ctx := context.Background()
 
-	bu := usecase.NewBeaconUsecase(br, time.Second*2)
+	bu := busecase.NewBeaconUsecase(br, time.Second*2)
 	b := models.Beacon{}
 	b.Arch = "x86"
 	b.Id = 1

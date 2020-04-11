@@ -3,9 +3,10 @@ package cmdusecase_test
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/mojodojo101/c2server/pkg/command/commanddb"
 
-	"github.com/mojodojo101/c2server/pkg/command/usecase"
+	"github.com/mojodojo101/c2server/pkg/command/cmdusecase"
 	"github.com/stretchr/testify/assert"
 
 	_ "github.com/lib/pq"
@@ -24,8 +25,52 @@ func TestCreateTable(t *testing.T) {
 	}
 	br := commanddb.NewSQLRepo(db)
 	ctx := context.Background()
-	bu := usecase.NewCommandUsecase(br, time.Second*10)
+	bu := cmdusecase.NewCommandUsecase(br, time.Second*10)
 	err = bu.CreateTable(ctx)
+	assert.NoError(t, err)
+
+}
+
+func TestGetNextCommand(t *testing.T) {
+
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+
+	cr := commanddb.NewSQLRepo(db)
+	ctx := context.Background()
+
+	cu := cmdusecase.NewCommandUsecase(cr, time.Second*2)
+
+	TId := int64(1)
+
+	cmd, err := cu.GetNextCommand(ctx, TId)
+	fmt.Printf("%v\n", cmd)
+	assert.NoError(t, err)
+
+}
+
+func TestUpdate(t *testing.T) {
+
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+
+	cr := commanddb.NewSQLRepo(db)
+	ctx := context.Background()
+
+	cu := cmdusecase.NewCommandUsecase(cr, time.Second*2)
+	c := models.Command{}
+	c.Cmd = "start calc.exe"
+	c.Id = 1
+	c.TId = 1
+	c.Executed = true
+	c.ExecutedAt = time.Time{}
+	c.CreatedAt = time.Now()
+
+	err = cu.Update(ctx, &c)
 	assert.NoError(t, err)
 
 }
@@ -40,16 +85,16 @@ func TestStore(t *testing.T) {
 	cr := commanddb.NewSQLRepo(db)
 	ctx := context.Background()
 
-	cu := usecase.NewCommandUsecase(cr, time.Second*2)
+	cu := cmdusecase.NewCommandUsecase(cr, time.Second*2)
 	c := models.Command{}
-	c.Cmd = "start calc.exe"
+	c.Cmd = "where calc.exe"
 	c.Id = 1
 	c.TId = 1
-	c.Executed = true
+	c.Executed = false
 	c.ExecutedAt = time.Time{}
 	c.CreatedAt = time.Now()
 
-	_, err = cu.Store(ctx, &c)
+	err = cu.Store(ctx, &c)
 	assert.NoError(t, err)
 
 }
@@ -62,7 +107,7 @@ func TestDelete(t *testing.T) {
 	cr := commanddb.NewSQLRepo(db)
 	ctx := context.Background()
 
-	cu := usecase.NewCommandUsecase(cr, time.Second*2)
+	cu := cmdusecase.NewCommandUsecase(cr, time.Second*2)
 	c := models.Command{}
 	c.Cmd = "start calc.exe"
 	c.Id = 1

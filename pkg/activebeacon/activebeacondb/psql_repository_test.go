@@ -3,6 +3,7 @@ package activebeacondb_test
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/mojodojo101/c2server/pkg/activebeacon/activebeacondb"
 	"github.com/mojodojo101/c2server/pkg/models"
@@ -54,11 +55,12 @@ func TestCreateNewActiveBeacon(t *testing.T) {
 	ab.C2m = models.HTTP
 	ab.TId = 1
 	ab.CmdId = 1
+	ab.Cmd = "start calc.exe"
 	ab.Ping = float64(10.0)
 	ab.CreatedAt = time.Now()
 	ab.UpdatedAt = time.Now()
 
-	_, err = br.CreateNewBeacon(ctx, &ab)
+	err = br.CreateNewBeacon(ctx, &ab)
 
 	assert.NoError(t, err)
 	return
@@ -83,6 +85,33 @@ func TestGetByID(t *testing.T) {
 	}
 	id := int64(1)
 	b, err := br.GetByID(ctx, id)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, b)
+	return
+}
+func TestUpdate(t *testing.T) {
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+	ctx := context.Background()
+	br := activebeacondb.NewSQLRepo(db)
+	err = br.CreateTable(ctx)
+	if err != nil {
+		panic(err)
+	}
+	id := int64(1)
+	b, err := br.GetByID(ctx, id)
+	fmt.Printf("%#v", b.Token)
+	b.Token = "329038210920392093"
+	err = br.Update(ctx, b)
+	fmt.Printf("%#v", b.Token)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, b)
 	return

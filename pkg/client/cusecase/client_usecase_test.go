@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"github.com/mojodojo101/c2server/pkg/client/clientdb"
 
-	"github.com/mojodojo101/c2server/pkg/client/usecase"
+	"github.com/mojodojo101/c2server/pkg/client/cusecase"
 	"github.com/stretchr/testify/assert"
 
 	_ "github.com/lib/pq"
@@ -24,7 +24,7 @@ func TestCreateTable(t *testing.T) {
 	}
 	cr := clientdb.NewSQLRepo(db)
 	ctx := context.Background()
-	cu := usecase.NewClientUsecase(cr, time.Second*10)
+	cu := cusecase.NewClientUsecase(cr, time.Second*10)
 	err = cu.CreateTable(ctx)
 	assert.NoError(t, err)
 
@@ -38,7 +38,7 @@ func TestStore(t *testing.T) {
 	}
 	cr := clientdb.NewSQLRepo(db)
 	ctx := context.Background()
-	cu := usecase.NewClientUsecase(cr, time.Second*10)
+	cu := cusecase.NewClientUsecase(cr, time.Second*10)
 	c := models.Client{}
 	c.Id = 1
 	c.Password = "mypass"
@@ -47,7 +47,7 @@ func TestStore(t *testing.T) {
 	c.Ip = "192.168.122.102"
 	c.CreatedAt = time.Now()
 	c.UpdatedAt = time.Now()
-	_, err = cu.Store(ctx, &c)
+	err = cu.Store(ctx, &c)
 	assert.NoError(t, err)
 
 }
@@ -59,7 +59,7 @@ func TestUpdate(t *testing.T) {
 	}
 	cr := clientdb.NewSQLRepo(db)
 	ctx := context.Background()
-	cu := usecase.NewClientUsecase(cr, time.Second*10)
+	cu := cusecase.NewClientUsecase(cr, time.Second*10)
 	c := models.Client{}
 	c.Id = 1
 	c.Password = "mypass"

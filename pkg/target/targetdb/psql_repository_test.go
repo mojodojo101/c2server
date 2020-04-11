@@ -80,7 +80,7 @@ func TestCreateNewTarget(t *testing.T) {
 	ta.CreatedAt = time.Now()
 	ta.UpdatedAt = time.Now()
 
-	_, err = br.CreateNewTarget(ctx, &ta)
+	err = br.CreateNewTarget(ctx, &ta)
 	assert.NoError(t, err)
 	return
 
@@ -108,56 +108,3 @@ func TestGetByID(t *testing.T) {
 	assert.NotEmpty(t, b)
 	return
 }
-
-func TestUpdateCmdID(t *testing.T) {
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-	ctx := context.Background()
-	tr := targetdb.NewSQLRepo(db)
-	err = tr.CreateTable(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	ta := models.Target{}
-	ta.Ipv4 = "192.168.138.145"
-	ta.Ipv6 = "DEAD::::BEEF"
-	ta.HostName = "mojo"
-	ta.Path = fmt.Sprintf("/root/go/src/github.com/mojodojo101/c2server/internal_resources/target/%v", ta.Ipv4)
-	ta.UpdatedAt = time.Now()
-
-	err = tr.Update(ctx, &ta)
-	assert.NoError(t, err)
-}
-
-/*
-func TestDeleteByID(t *testing.T) {
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		panic(err)
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-	ctx := context.Background()
-	br := targetdb.NewSQLRepo(db)
-	err = br.CreateTable(ctx)
-	if err != nil {
-		panic(err)
-	}
-	id := int64(1)
-	err = br.DeleteByID(ctx, id)
-	assert.NoError(t, err)
-}
-*/

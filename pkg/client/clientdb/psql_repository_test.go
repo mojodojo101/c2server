@@ -80,7 +80,7 @@ func TestCreateNewClient(t *testing.T) {
 	c.UpdatedAt = time.Now()
 	c.CreatedAt = time.Now()
 
-	_, err = br.CreateNewClient(ctx, &c)
+	err = br.CreateNewClient(ctx, &c)
 	assert.NoError(t, err)
 	return
 
