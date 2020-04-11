@@ -73,7 +73,7 @@ func TestCreateNewClient(t *testing.T) {
 	}
 	c := models.Client{}
 	c.Ip = "127.0.0.1"
-	c.Name = "mojo2"
+	c.Name = "mojo"
 	c.Password = "mojodojo101+"
 	c.Token = "myawesometoken"
 	c.CSRFToken = "myawesometokencsrf"

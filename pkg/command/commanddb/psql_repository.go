@@ -56,7 +56,7 @@ func (r *sqlCommandRepo) GetNextCommand(ctx context.Context, targetId int64) (*m
 	query := `SELECT * FROM command WHERE t_id=$1 and executing=FALSE`
 	return r.getOneItem(ctx, query, targetId)
 }
-func (r *sqlCommandRepo) GetByTargetID(ctx context.Context, amount, targetId int64) (*[]models.Command, error) {
+func (r *sqlCommandRepo) GetByTargetID(ctx context.Context, amount, targetId int64) ([]*models.Command, error) {
 	query := `SELECT * FROM command WHERE t_id=$1`
 	return r.getItemsByValue(ctx, query, amount, targetId)
 
@@ -128,14 +128,14 @@ func (r *sqlCommandRepo) getOneItem(ctx context.Context, query string, args ...i
 	return c, nil
 }
 
-func (r *sqlCommandRepo) getItemsByValue(ctx context.Context, query string, amount int64, args ...interface{}) (*[]models.Command, error) {
+func (r *sqlCommandRepo) getItemsByValue(ctx context.Context, query string, amount int64, args ...interface{}) ([]*models.Command, error) {
 	stmt, err := r.DB.PrepareContext(ctx, query)
 	if err != nil {
 		logrus.Error(err)
 		return nil, err
 	}
 	row := stmt.QueryRowContext(ctx, args...)
-	cs := make([]models.Command, amount)
+	cs := make([]*models.Command, amount)
 	for i, _ := range cs {
 		err = row.Scan(
 			&cs[i].Id,
@@ -151,12 +151,12 @@ func (r *sqlCommandRepo) getItemsByValue(ctx context.Context, query string, amou
 			logrus.Error(err)
 			if i != 0 {
 				cs = append(cs[:i])
-				return &cs, nil
+				return cs, nil
 			}
 			return nil, err
 		}
 	}
-	return &cs, nil
+	return cs, nil
 }
 
 func (r *sqlCommandRepo) addItem(ctx context.Context, query string, args ...interface{}) (int64, error) {

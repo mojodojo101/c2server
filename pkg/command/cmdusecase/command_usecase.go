@@ -37,7 +37,15 @@ func (cu *commandUsecase) GetByID(ctx context.Context, id int64) (*models.Comman
 	return cmd, err
 
 }
+func (cu *commandUsecase) ListCommandsByTargetID(ctx context.Context, targetId int64) ([]*models.Command, error) {
 
+	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
+	defer cancel()
+
+	cmds, err := cu.commandRepo.GetByTargetID(cctx, 40, targetId)
+	return cmds, err
+
+}
 func (cu *commandUsecase) GetNextCommand(ctx context.Context, targetId int64) (*models.Command, error) {
 
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)

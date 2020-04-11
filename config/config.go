@@ -13,6 +13,18 @@ type DBConfig struct {
 	SSLMode  string
 }
 
+type ResourceConfig struct {
+	TargetsPath string
+	BeaconsPath string
+}
+
+func GetResourceConfig() *ResourceConfig {
+	return &ResourceConfig{
+		TargetsPath: "/root/go/src/github.com/mojodojo101/c2server/internal_resources/targets/",
+		BeaconsPath: "/root/go/src/github.com/mojodojo101/c2server/internal_resources/beacons/",
+	}
+}
+
 func GetConfig() *Config {
 	return &Config{
 		DB: &DBConfig{

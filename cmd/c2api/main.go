@@ -15,8 +15,9 @@ import (
 
 	_ "github.com/mojodojo101/c2server/pkg/beacon/beacondb"
 	_ "github.com/mojodojo101/c2server/pkg/beacon/busecase"
-	_ "github.com/mojodojo101/c2server/pkg/client/clientdb"
-	_ "github.com/mojodojo101/c2server/pkg/client/cusecase"
+	"github.com/mojodojo101/c2server/pkg/client/clientdb"
+	"github.com/mojodojo101/c2server/pkg/client/cusecase"
+	"github.com/mojodojo101/c2server/pkg/client/delivery/chttp"
 	"github.com/mojodojo101/c2server/pkg/command/cmdusecase"
 	"github.com/mojodojo101/c2server/pkg/command/commanddb"
 	_ "github.com/mojodojo101/c2server/pkg/models"
@@ -45,17 +46,6 @@ func main() {
 
 	//init client repo
 	ctx := context.Background()
-	//cr := clientdb.NewSQLRepo(db)
-	//err = cr.CreateTable(ctx)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//init client usecase
-	//cu := cusecase.NewClientUsecase(cr, timeout)
-	//if err != nil {
-	//	panic(err)
-	//}
-
 	//init beacon repo
 	//br := beacondb.NewSQLRepo(db)
 	//err = br.CreateTable(ctx)
@@ -104,7 +94,22 @@ func main() {
 		panic(err)
 	}
 
+	//init client repo
+	cr := clientdb.NewSQLRepo(db)
+	err = cr.CreateTable(ctx)
+	if err != nil {
+		panic(err)
+	}
+	//init client usecase
+	cu := cusecase.NewClientUsecase(cr, tu, timeout)
+	if err != nil {
+		panic(err)
+	}
+
+	ch := chttp.NewHandler(cu)
 	abh := abhttp.NewHandler(au)
+	http.ListenAndServe(":443", &ch)
+
 	http.ListenAndServe(":80", &abh)
 	//fmt.Printf("%#v\n", ch)
 	//fmt.Println("sometext")

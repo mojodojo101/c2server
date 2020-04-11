@@ -90,6 +90,23 @@ func (tu *targetUsecase) SetCmdExecuted(ctx context.Context, t *models.Target, c
 	return err
 }
 
+func (tu *targetUsecase) StoreCmd(ctx context.Context, t *models.Target, cmd string) error {
+	//probably wanna change this to io.Pipe
+	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
+	defer cancel()
+	c := models.Command{}
+	c.Id = 0
+	c.TId = t.Id
+	c.Cmd = cmd
+	c.Executed = false
+	c.Executing = false
+	c.CreatedAt = time.Now()
+	c.ExecutedAt = time.Time{}
+
+	err := tu.cmdUsecase.Store(cctx, &c)
+	return err
+}
+
 func (tu *targetUsecase) GetByID(ctx context.Context, id int64) (*models.Target, error) {
 
 	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
@@ -100,6 +117,7 @@ func (tu *targetUsecase) GetByID(ctx context.Context, id int64) (*models.Target,
 	return b, err
 
 }
+
 func (tu *targetUsecase) GetByIpv4(ctx context.Context, ipv4 string) (*models.Target, error) {
 
 	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
@@ -110,10 +128,21 @@ func (tu *targetUsecase) GetByIpv4(ctx context.Context, ipv4 string) (*models.Ta
 	return t, err
 
 }
+func (tu *targetUsecase) ListCommands(ctx context.Context, t *models.Target) ([]*models.Command, error) {
+
+	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
+	defer cancel()
+
+	cmds, err := tu.cmdUsecase.ListCommandsByTargetID(cctx, t.Id)
+
+	return cmds, err
+
+}
 func (tu *targetUsecase) Store(ctx context.Context, t *models.Target) error {
 	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
 	defer cancel()
 	existingTarget, _ := tu.GetByID(cctx, t.Id)
+	fmt.Printf("we got to tu store t=%v\n", t)
 	if existingTarget != nil {
 		return models.ErrDuplicate
 	}

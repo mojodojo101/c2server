@@ -13,7 +13,9 @@ type Usecase interface {
 	Update(ctx context.Context, t *models.Target) error
 	FetchCmdResponse(ctx context.Context, t *models.Target, cmdId int64) ([]byte, error)
 	GetNextCmd(ctx context.Context, t *models.Target) (int64, string, error)
+	ListCommands(ctx context.Context, t *models.Target) ([]*models.Command, error)
 	SetCmdExecuted(ctx context.Context, t *models.Target, cmdId int64, response []byte) error
 	Store(ctx context.Context, t *models.Target) error
+	StoreCmd(ctx context.Context, t *models.Target, cmd string) error
 	CreateTable(ctx context.Context) error
 }

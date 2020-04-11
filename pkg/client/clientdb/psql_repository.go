@@ -5,6 +5,7 @@ package clientdb
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -90,7 +91,10 @@ func (r *sqlClientRepo) CreateNewClient(ctx context.Context, c *models.Client) e
 	if err != nil {
 		logrus.Error(err)
 	}
-
+	c.Name = strings.TrimSpace(c.Name)
+	c.Password = strings.TrimSpace(c.Password)
+	c.Token = strings.TrimSpace(c.Token)
+	c.CSRFToken = strings.TrimSpace(c.CSRFToken)
 	c.Id = key
 
 	return err
