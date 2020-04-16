@@ -2,7 +2,6 @@ package cmdusecase
 
 import (
 	"context"
-	"fmt"
 	"github.com/mojodojo101/c2server/pkg/command"
 	"github.com/mojodojo101/c2server/pkg/models"
 	"time"
@@ -37,12 +36,12 @@ func (cu *commandUsecase) GetByID(ctx context.Context, id int64) (*models.Comman
 	return cmd, err
 
 }
-func (cu *commandUsecase) ListCommandsByTargetID(ctx context.Context, targetId int64) ([]*models.Command, error) {
+func (cu *commandUsecase) ListCommandsByTargetID(ctx context.Context, tId, amount int64) ([]models.Command, error) {
 
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
 	defer cancel()
 
-	cmds, err := cu.commandRepo.GetByTargetID(cctx, 40, targetId)
+	cmds, err := cu.commandRepo.GetByTargetID(cctx, amount, tId)
 	return cmds, err
 
 }
@@ -79,7 +78,6 @@ func (cu *commandUsecase) Store(ctx context.Context, c *models.Command) error {
 
 }
 func (cu *commandUsecase) Delete(ctx context.Context, c *models.Command) error {
-	fmt.Printf("c = %#v\n", c)
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
 	defer cancel()
 	_, err := cu.GetByID(cctx, c.Id)

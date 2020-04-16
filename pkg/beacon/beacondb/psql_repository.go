@@ -3,6 +3,7 @@ package beacondb
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
@@ -99,6 +100,10 @@ func (r *sqlBeaconRepo) getOneItem(ctx context.Context, query string, args ...in
 		logrus.Error(err)
 		return nil, err
 	}
+	b.Path = strings.TrimRight(b.Path, " ")
+	b.Os = strings.TrimRight(b.Os, " ")
+	b.Arch = strings.TrimRight(b.Arch, " ")
+	b.Lang = strings.TrimRight(b.Lang, " ")
 
 	return b, nil
 }

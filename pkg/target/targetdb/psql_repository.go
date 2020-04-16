@@ -3,6 +3,8 @@ package targetdb
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	_ "golang.org/x/net/ipv4"
@@ -52,6 +54,10 @@ func (r *sqlTargetRepo) GetByIpv4(ctx context.Context, ipv4 string) (*models.Tar
 	query := `SELECT * FROM target WHERE ipv4=$1`
 	return r.getOneItem(ctx, query, ipv4)
 }
+func (r *sqlTargetRepo) GetAllTargets(ctx context.Context, amount int64) ([]models.Target, error) {
+	query := `SELECT * FROM target`
+	return r.getAllItems(ctx, query, amount)
+}
 func (r *sqlTargetRepo) DeleteByID(ctx context.Context, id int64) error {
 	query := `DELETE FROM target WHERE id=$1`
 	_, err := r.execQuery(ctx, query, id)
@@ -91,6 +97,7 @@ func (r *sqlTargetRepo) CreateNewTarget(ctx context.Context, t *models.Target) e
 //END struct exported methods
 
 func (r *sqlTargetRepo) getOneItem(ctx context.Context, query string, args ...interface{}) (*models.Target, error) {
+	fmt.Printf("query for target = %v  with val %v", query, args)
 	stmt, err := r.DB.PrepareContext(ctx, query)
 	if err != nil {
 		logrus.Error(err)
@@ -115,6 +122,10 @@ func (r *sqlTargetRepo) getOneItem(ctx context.Context, query string, args ...in
 		logrus.Error(err)
 		return nil, err
 	}
+	t.Ipv4 = strings.TrimRight(t.Ipv4, " ")
+	t.Ipv6 = strings.TrimRight(t.Ipv6, " ")
+	t.Path = strings.TrimRight(t.Path, " ")
+	t.HostName = strings.TrimRight(t.HostName, " ")
 
 	return t, nil
 }
@@ -168,4 +179,39 @@ func (r *sqlTargetRepo) execQuery(ctx context.Context, query string, args ...int
 
 	return rows, nil
 
+}
+func (r *sqlTargetRepo) getAllItems(ctx context.Context, query string, amount int64, args ...interface{}) ([]models.Target, error) {
+	rows, err := r.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		logrus.Error(err)
+		return nil, err
+	}
+	defer rows.Close()
+	ts := make([]models.Target, amount)
+	for i, _ := range ts {
+		rows.Next()
+		err = rows.Scan(
+			&ts[i].Id,
+			&ts[i].Ipv4,
+			&ts[i].Ipv6,
+			&ts[i].HostName,
+			&ts[i].Path,
+			&ts[i].CreatedAt,
+			&ts[i].UpdatedAt,
+		)
+		if err != nil {
+			logrus.Error(err)
+			if i != 0 {
+				ts = append(ts[:i])
+				return ts, nil
+			}
+			return nil, err
+		}
+
+		ts[i].HostName = strings.TrimRight(ts[i].HostName, " ")
+		ts[i].Ipv4 = strings.TrimRight(ts[i].Ipv4, " ")
+		ts[i].Ipv6 = strings.TrimRight(ts[i].Ipv6, " ")
+		ts[i].Path = strings.TrimRight(ts[i].Path, " ")
+	}
+	return ts, nil
 }

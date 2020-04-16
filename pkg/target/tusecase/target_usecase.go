@@ -53,18 +53,18 @@ func (tu *targetUsecase) FetchCmdResponse(ctx context.Context, t *models.Target,
 
 //GetNextCmd
 //fetch cmd to execute from command table and set status to executing
-func (tu *targetUsecase) GetNextCmd(ctx context.Context, t *models.Target) (int64, string, error) {
+func (tu *targetUsecase) GetNextCmd(ctx context.Context, t *models.Target) (*models.Command, error) {
 	//probably wanna change this to io.Pipe
 	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
 	defer cancel()
 
 	c, err := tu.cmdUsecase.GetNextCommand(cctx, t.Id)
 	if err != nil {
-		return 0, "", err
+		return nil, err
 	}
 	c.Executing = true
 	err = tu.cmdUsecase.Update(cctx, c)
-	return c.Id, c.Cmd, err
+	return c, err
 }
 
 func (tu *targetUsecase) SetCmdExecuted(ctx context.Context, t *models.Target, cmdId int64, response []byte) error {
@@ -72,11 +72,12 @@ func (tu *targetUsecase) SetCmdExecuted(ctx context.Context, t *models.Target, c
 	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
 	defer cancel()
 
-	c, err := tu.cmdUsecase.GetByID(cctx, t.Id)
+	c, err := tu.cmdUsecase.GetByID(cctx, cmdId)
 	if err != nil {
 		return models.ErrItemNotFound
 	}
 	c.Executed = true
+	c.Executing = true
 	c.ExecutedAt = time.Now()
 	cmdPath := fmt.Sprintf("%v/%v", strings.TrimSpace(t.Path), cmdId)
 	fmt.Printf("path =%v", cmdPath)
@@ -90,20 +91,11 @@ func (tu *targetUsecase) SetCmdExecuted(ctx context.Context, t *models.Target, c
 	return err
 }
 
-func (tu *targetUsecase) StoreCmd(ctx context.Context, t *models.Target, cmd string) error {
+func (tu *targetUsecase) StoreCmd(ctx context.Context, t *models.Target, cmd *models.Command) error {
 	//probably wanna change this to io.Pipe
 	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
 	defer cancel()
-	c := models.Command{}
-	c.Id = 0
-	c.TId = t.Id
-	c.Cmd = cmd
-	c.Executed = false
-	c.Executing = false
-	c.CreatedAt = time.Now()
-	c.ExecutedAt = time.Time{}
-
-	err := tu.cmdUsecase.Store(cctx, &c)
+	err := tu.cmdUsecase.Store(cctx, cmd)
 	return err
 }
 
@@ -128,24 +120,34 @@ func (tu *targetUsecase) GetByIpv4(ctx context.Context, ipv4 string) (*models.Ta
 	return t, err
 
 }
-func (tu *targetUsecase) ListCommands(ctx context.Context, t *models.Target) ([]*models.Command, error) {
+func (tu *targetUsecase) ListCommands(ctx context.Context, t *models.Target, amount int64) ([]models.Command, error) {
 
 	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
 	defer cancel()
 
-	cmds, err := tu.cmdUsecase.ListCommandsByTargetID(cctx, t.Id)
+	cmds, err := tu.cmdUsecase.ListCommandsByTargetID(cctx, t.Id, amount)
 
 	return cmds, err
+
+}
+func (tu *targetUsecase) ListTargets(ctx context.Context, amount int64) ([]models.Target, error) {
+
+	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
+	defer cancel()
+
+	targets, err := tu.targetRepo.GetAllTargets(cctx, amount)
+	return targets, err
 
 }
 func (tu *targetUsecase) Store(ctx context.Context, t *models.Target) error {
 	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
 	defer cancel()
 	existingTarget, _ := tu.GetByID(cctx, t.Id)
-	fmt.Printf("we got to tu store t=%v\n", t)
 	if existingTarget != nil {
+
 		return models.ErrDuplicate
 	}
+
 	err := tu.targetRepo.CreateNewTarget(cctx, t)
 	return err
 

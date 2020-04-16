@@ -14,6 +14,7 @@ type Repository interface {
 	// i changed this from updatecmdid and update hostname just to keep it a bit simpler for now
 	// will be worth reimplementing if i actually extend this simple c2
 	Update(ctx context.Context, t *models.Target) error
+	GetAllTargets(ctx context.Context, amount int64) ([]models.Target, error)
 	CreateTable(ctx context.Context) error
 	DropTable(ctx context.Context) error
 }

@@ -12,10 +12,11 @@ type Usecase interface {
 	Delete(ctx context.Context, t *models.Target) error
 	Update(ctx context.Context, t *models.Target) error
 	FetchCmdResponse(ctx context.Context, t *models.Target, cmdId int64) ([]byte, error)
-	GetNextCmd(ctx context.Context, t *models.Target) (int64, string, error)
-	ListCommands(ctx context.Context, t *models.Target) ([]*models.Command, error)
+	GetNextCmd(ctx context.Context, t *models.Target) (*models.Command, error)
+	ListCommands(ctx context.Context, t *models.Target, amount int64) ([]models.Command, error)
+	ListTargets(ctx context.Context, amount int64) ([]models.Target, error)
 	SetCmdExecuted(ctx context.Context, t *models.Target, cmdId int64, response []byte) error
 	Store(ctx context.Context, t *models.Target) error
-	StoreCmd(ctx context.Context, t *models.Target, cmd string) error
+	StoreCmd(ctx context.Context, t *models.Target, cmd *models.Command) error
 	CreateTable(ctx context.Context) error
 }

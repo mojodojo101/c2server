@@ -57,10 +57,10 @@ func TestRegister(t *testing.T) {
 	au := abusecase.NewActiveBeaconUsecase(ar, tu, time.Second*2)
 
 	a := models.ActiveBeacon{}
-	a.Id = 321321
+	a.Id = 0
 	a.PId = 0
 	a.BId = 1
-	a.CmdId = 1
+	a.CmdId = 0
 	a.CreatedAt = time.Now()
 	a.UpdatedAt = time.Now()
 	a.TId = 1
@@ -95,7 +95,7 @@ func TestSetCmdExecuted(t *testing.T) {
 	a.Id = 1
 	a.PId = 0
 	a.BId = 1
-	a.CmdId = 1
+	a.CmdId = 2
 	a.CreatedAt = time.Now()
 	a.UpdatedAt = time.Now()
 	a.TId = 1
@@ -141,6 +141,41 @@ func TestUpdate(t *testing.T) {
 	a.Ping = float64(10.0)
 
 	err = au.Update(ctx, &a)
+	assert.NoError(t, err)
+
+}
+
+func TestGetNextCmd(t *testing.T) {
+
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+
+	ar := activebeacondb.NewSQLRepo(db)
+	tr := targetdb.NewSQLRepo(db)
+	cmdr := commanddb.NewSQLRepo(db)
+	ctx := context.Background()
+
+	cu := cmdusecase.NewCommandUsecase(cmdr, time.Second*2)
+	tu := tusecase.NewTargetUsecase(tr, cu, time.Second*2)
+	au := abusecase.NewActiveBeaconUsecase(ar, tu, time.Second*2)
+
+	a := models.ActiveBeacon{}
+	a.Id = 1
+	a.PId = 0
+	a.BId = 1
+	a.CmdId = 1
+	a.CreatedAt = time.Now()
+	a.UpdatedAt = time.Now()
+	a.TId = 1
+	a.MissedPings = 0
+	a.Pm = models.HTTP
+	a.C2m = models.HTTP
+	a.Token = "23910809213"
+	a.Ping = float64(10.0)
+
+	err = au.GetNextCmd(ctx, &a)
 	assert.NoError(t, err)
 
 }

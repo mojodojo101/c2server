@@ -15,6 +15,7 @@ import (
 
 type BeaconRequest struct {
 	Id       int64  `json:"id"`
+	Ipv4     string `json:"ipv4"`
 	BId      int64  `json:"b_id"`
 	TId      int64  `json:"t_id"`
 	Token    string `json:"token"`
@@ -49,7 +50,7 @@ func (ah *ActiveBeaconHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	}
 	var bResp *BeaconResponse
 	if bReq.Id == 0 {
-		bResp, err = ah.register(ctx, r.Host, bReq)
+		bResp, err = ah.register(ctx, bReq.Ipv4, bReq)
 		if err != nil {
 			logrus.Error(err)
 			return
@@ -85,14 +86,6 @@ func (ah *ActiveBeaconHandler) encode(ctx context.Context, bResp *BeaconResponse
 }
 func (ah *ActiveBeaconHandler) decode(ctx context.Context, r *http.Request) (*BeaconRequest, error) {
 	bReq := BeaconRequest{}
-	//var buffer []byte
-	//fmt.Printf("req  = %v", r)
-	//_, err := r.Body.Read(buffer)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//fmt.Printf("json buffer = %v", buffer)
-	//err = json.Unmarshal(buffer, &bReq)
 	err := json.NewDecoder(r.Body).Decode(&bReq)
 	if err != nil {
 		return nil, errors.New("Could not Unmarshal json, invalid beacon reponse")
@@ -105,12 +98,14 @@ func (ah *ActiveBeaconHandler) decode(ctx context.Context, r *http.Request) (*Be
 
 }
 func (ah *ActiveBeaconHandler) register(ctx context.Context, ipv4 string, br *BeaconRequest) (*BeaconResponse, error) {
+	fmt.Printf("in register\n")
 	ab := models.ActiveBeacon{}
 	t, err := ah.ABUsecase.GetTargetByIpv4(ctx, ipv4)
 	if err != nil {
 		return nil, err
 	}
 
+	fmt.Printf("found Target\n")
 	ab.BId = br.BId
 	ab.TId = t.Id
 	ab.PId = 0
@@ -124,12 +119,17 @@ func (ah *ActiveBeaconHandler) register(ctx context.Context, ipv4 string, br *Be
 		return nil, err
 	}
 	bResp, err := ah.getNextCommand(ctx, &ab)
-
+	if err == models.ErrItemNotFound {
+		bResp.Cmd = ""
+		bResp.Id = ab.Id
+		bResp.Token = ab.Token
+		bResp.TId = ab.TId
+	}
 	return bResp, err
 }
 func (ah *ActiveBeaconHandler) getNextCommand(ctx context.Context, ab *models.ActiveBeacon) (*BeaconResponse, error) {
 
-	err := ah.ABUsecase.GetNextCommand(ctx, ab)
+	err := ah.ABUsecase.GetNextCmd(ctx, ab)
 	if err != nil {
 		return nil, err
 	}
@@ -141,6 +141,7 @@ func (ah *ActiveBeaconHandler) getNextCommand(ctx context.Context, ab *models.Ac
 	return &bResp, err
 }
 func (ah *ActiveBeaconHandler) signIn(ctx context.Context, bReq *BeaconRequest) (*BeaconResponse, error) {
+	ab := &models.ActiveBeacon{}
 	ab, err := ah.ABUsecase.GetByID(ctx, bReq.Id)
 	if err != nil {
 		return nil, err
@@ -150,7 +151,6 @@ func (ah *ActiveBeaconHandler) signIn(ctx context.Context, bReq *BeaconRequest) 
 	if err != nil {
 		return nil, err
 	}
-
 	bResp, err := ah.getNextCommand(ctx, ab)
 
 	return bResp, err

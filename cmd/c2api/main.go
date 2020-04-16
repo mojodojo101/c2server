@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	_ "fmt"
 	"net/http"
 	"time"
 
@@ -26,10 +26,6 @@ import (
 )
 
 func main() {
-	for i := 0; i < 5; i++ {
-		fmt.Println("")
-	}
-	fmt.Println("starting test")
 	connStr := "host=localhost user=c2admin password=mojodojo101+ dbname=c2db port=5432 sslmode=require"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -42,7 +38,7 @@ func main() {
 		panic(err)
 	}
 
-	timeout := time.Second * 5
+	timeout := time.Second * 6
 
 	//init client repo
 	ctx := context.Background()
@@ -108,10 +104,18 @@ func main() {
 
 	ch := chttp.NewHandler(cu)
 	abh := abhttp.NewHandler(au)
+	signalCh := make(chan bool, 1)
+	go func() {
+		for {
+			select {
+			case <-signalCh:
+				return
+			default:
+				http.ListenAndServe(":80", &abh)
+			}
+		}
+	}()
+
 	http.ListenAndServe(":443", &ch)
-
-	http.ListenAndServe(":80", &abh)
-	//fmt.Printf("%#v\n", ch)
-	//fmt.Println("sometext")
-
+	signalCh <- true
 }

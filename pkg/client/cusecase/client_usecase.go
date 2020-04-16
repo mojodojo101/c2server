@@ -7,6 +7,7 @@ import (
 	"github.com/mojodojo101/c2server/pkg/client"
 	"github.com/mojodojo101/c2server/pkg/models"
 	"github.com/mojodojo101/c2server/pkg/target"
+	"os"
 	"time"
 )
 
@@ -32,12 +33,12 @@ func (cu *clientUsecase) CreateTable(ctx context.Context) error {
 	return err
 
 }
-func (cu *clientUsecase) AddNewCommad(ctx context.Context, c *models.Client, tId int64, cmd string) error {
+func (cu *clientUsecase) AddNewCommad(ctx context.Context, c *models.Client, cmd *models.Command) error {
 
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
 	defer cancel()
 
-	t, err := cu.targetUsecase.GetByID(cctx, tId)
+	t, err := cu.targetUsecase.GetByID(cctx, cmd.TId)
 	if err != nil {
 		return err
 	}
@@ -58,52 +59,66 @@ func (cu *clientUsecase) RetrieveCommandResponse(ctx context.Context, c *models.
 	return string(data), err
 
 }
-func (cu *clientUsecase) ListTargetCommands(ctx context.Context, c *models.Client, targetId int64) ([]*models.Command, error) {
+func (cu *clientUsecase) ListTargets(ctx context.Context, c *models.Client, amount int64) ([]models.Target, error) {
 
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
 	defer cancel()
 
-	err := cu.isValidClient(cctx, cancel, c)
+	err := cu.isValidClient(cctx, c)
 	if err != nil {
 		return nil, err
 	}
-	t, err := cu.targetUsecase.GetByID(cctx, targetId)
+	targets, err := cu.targetUsecase.ListTargets(cctx, amount)
+	return targets, err
+
+}
+func (cu *clientUsecase) ListTargetCommands(ctx context.Context, c *models.Client, tId, amount int64) ([]models.Command, error) {
+
+	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
+	defer cancel()
+
+	err := cu.isValidClient(cctx, c)
 	if err != nil {
 		return nil, err
 	}
-	cmds, err := cu.targetUsecase.ListCommands(cctx, t)
+	t, err := cu.targetUsecase.GetByID(cctx, tId)
+	if err != nil {
+		return nil, err
+	}
+	cmds, err := cu.targetUsecase.ListCommands(cctx, t, amount)
 	return cmds, err
 
 }
 
-func (cu *clientUsecase) AddNewTarget(ctx context.Context, c *models.Client, ipv4 string) error {
+func (cu *clientUsecase) AddNewTarget(ctx context.Context, c *models.Client, t *models.Target) error {
 
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
 	defer cancel()
 
-	err := cu.isValidClient(cctx, cancel, c)
+	err := cu.isValidClient(cctx, c)
 	if err != nil {
 		return err
 	}
-	t := models.Target{}
-	t.Id = 1
-	t.Ipv4 = ipv4
-	t.CreatedAt = time.Now()
-	t.HostName = ""
-	t.UpdatedAt = t.CreatedAt
-	err = cu.targetUsecase.Store(cctx, &t)
-	fmt.Printf("we got here1%v\n", err)
+
+	err = cu.targetUsecase.Store(cctx, t)
 	if err != nil {
 		return err
 	}
-	paths := config.GetResourceConfig()
-	t.Path = fmt.Sprintf("%v/%v", paths.TargetsPath, t.Id)
-	err = cu.targetUsecase.Update(cctx, &t)
+
+	//I am adding the targetpath afterwards because it depends on the id of the target we get form the db
+	//+ i dont want the user to supply this
+	TARGETPATH := config.GetResourceConfig().TargetsPath
+	t.Path = fmt.Sprintf("%v%v", TARGETPATH, t.Id)
+
+	err = os.Mkdir(t.Path, 0600)
+	if err != nil {
+		return err
+	}
+	err = cu.targetUsecase.Update(cctx, t)
 	return err
 
 }
-func (cu *clientUsecase) isValidClient(ctx context.Context, cancel context.CancelFunc, c *models.Client) error {
-	defer cancel()
+func (cu *clientUsecase) isValidClient(ctx context.Context, c *models.Client) error {
 
 	existingClient, err := cu.clientRepo.GetByID(ctx, c.Id)
 	if err != nil {
@@ -148,7 +163,7 @@ func (cu *clientUsecase) Store(ctx context.Context, c *models.Client) error {
 func (cu *clientUsecase) Delete(ctx context.Context, c *models.Client) error {
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
 	defer cancel()
-	err := cu.isValidClient(cctx, cancel, c)
+	err := cu.isValidClient(cctx, c)
 	if err != nil {
 		return err
 	}
@@ -160,7 +175,7 @@ func (cu *clientUsecase) Delete(ctx context.Context, c *models.Client) error {
 func (cu *clientUsecase) Update(ctx context.Context, c *models.Client) error {
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
 	defer cancel()
-	err := cu.isValidClient(cctx, cancel, c)
+	err := cu.isValidClient(cctx, c)
 	if err != nil {
 		return err
 	}

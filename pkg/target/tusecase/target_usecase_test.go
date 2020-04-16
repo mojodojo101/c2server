@@ -106,10 +106,9 @@ func TestGetNextCmd(t *testing.T) {
 	ta.CreatedAt = time.Now()
 	ta.UpdatedAt = time.Now()
 	ta.Path = fmt.Sprintf("/root/go/src/github.com/mojodojo101/c2server/internal_resources/targets/%v/", ta.Id)
-	cmdID, cmd, err := tu.GetNextCmd(ctx, &ta)
+	cmd, err := tu.GetNextCmd(ctx, &ta)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, cmd)
-	assert.NotEmpty(t, cmdID)
 
 }
 func TestSetCmdExecuted(t *testing.T) {

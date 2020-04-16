@@ -3,6 +3,7 @@ package commanddb_test
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/mojodojo101/c2server/pkg/command/commanddb"
 	"github.com/mojodojo101/c2server/pkg/models"
@@ -182,9 +183,10 @@ func TestGetByTargetID(t *testing.T) {
 		panic(err)
 	}
 	targetId := int64(1)
-	amount := int64(5)
+	amount := int64(50)
 	cs, err := cr.GetByTargetID(ctx, amount, targetId)
-	for _, c := range *cs {
+	fmt.Printf("commands[] =%v", cs)
+	for _, c := range cs {
 		assert.NotEmpty(t, c)
 	}
 	assert.NoError(t, err)

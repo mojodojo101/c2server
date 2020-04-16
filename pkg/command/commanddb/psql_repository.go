@@ -3,6 +3,7 @@ package commanddb
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
@@ -56,9 +57,9 @@ func (r *sqlCommandRepo) GetNextCommand(ctx context.Context, targetId int64) (*m
 	query := `SELECT * FROM command WHERE t_id=$1 and executing=FALSE`
 	return r.getOneItem(ctx, query, targetId)
 }
-func (r *sqlCommandRepo) GetByTargetID(ctx context.Context, amount, targetId int64) ([]*models.Command, error) {
+func (r *sqlCommandRepo) GetByTargetID(ctx context.Context, tId, amount int64) ([]models.Command, error) {
 	query := `SELECT * FROM command WHERE t_id=$1`
-	return r.getItemsByValue(ctx, query, amount, targetId)
+	return r.getItemsByValue(ctx, query, amount, tId)
 
 }
 
@@ -124,20 +125,22 @@ func (r *sqlCommandRepo) getOneItem(ctx context.Context, query string, args ...i
 		logrus.Error(err)
 		return nil, err
 	}
+	c.Cmd = strings.TrimRight(c.Cmd, " ")
 
 	return c, nil
 }
 
-func (r *sqlCommandRepo) getItemsByValue(ctx context.Context, query string, amount int64, args ...interface{}) ([]*models.Command, error) {
-	stmt, err := r.DB.PrepareContext(ctx, query)
+func (r *sqlCommandRepo) getItemsByValue(ctx context.Context, query string, amount int64, args ...interface{}) ([]models.Command, error) {
+	rows, err := r.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		logrus.Error(err)
 		return nil, err
 	}
-	row := stmt.QueryRowContext(ctx, args...)
-	cs := make([]*models.Command, amount)
+	defer rows.Close()
+	cs := make([]models.Command, amount)
 	for i, _ := range cs {
-		err = row.Scan(
+		rows.Next()
+		err = rows.Scan(
 			&cs[i].Id,
 			&cs[i].TId,
 			&cs[i].Cmd,
@@ -146,7 +149,6 @@ func (r *sqlCommandRepo) getItemsByValue(ctx context.Context, query string, amou
 			&cs[i].CreatedAt,
 			&cs[i].ExecutedAt,
 		)
-
 		if err != nil {
 			logrus.Error(err)
 			if i != 0 {
@@ -155,6 +157,8 @@ func (r *sqlCommandRepo) getItemsByValue(ctx context.Context, query string, amou
 			}
 			return nil, err
 		}
+
+		cs[i].Cmd = strings.TrimRight(cs[i].Cmd, " ")
 	}
 	return cs, nil
 }
