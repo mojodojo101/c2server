@@ -3,23 +3,19 @@ package models
 import "time"
 
 type Client struct {
-	Id   int64	`json:"id"`
+	Id int64 `json:"id"`
 
-	Ip  string	`json:"ip" validate:"required"`
+	Ip string `json:"ip" validate:"required"`
 
-	Name string	`json:"name" validate:"required"`
+	Name string `json:"name" validate:"required"`
 
-	Password string	`json:"password"`
+	Password string `json:"password"`
 
-	Token string	`json:"token"`
-	
-	CSRFToken string	`json:"csrf_token"`
+	Token string `json:"token"`
 
-	CreatedAt time.Time	`json:"created_at"`
+	CSRFToken string `json:"csrfToken"`
 
-	UpdatedAt time.Time	`json:"updated_at"`
-	
+	CreatedAt time.Time `json:"createdAt"`
+
+	UpdatedAt time.Time `json:"updatedAt"`
 }
-
-
-

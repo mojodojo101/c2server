@@ -97,7 +97,7 @@ func main() {
 		panic(err)
 	}
 	//init client usecase
-	cu := cusecase.NewClientUsecase(cr, tu, timeout)
+	cu := cusecase.NewClientUsecase(cr, tu, au, timeout)
 	if err != nil {
 		panic(err)
 	}

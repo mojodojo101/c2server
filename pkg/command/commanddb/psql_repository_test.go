@@ -184,7 +184,7 @@ func TestGetByTargetID(t *testing.T) {
 	}
 	targetId := int64(1)
 	amount := int64(50)
-	cs, err := cr.GetByTargetID(ctx, amount, targetId)
+	cs, err := cr.GetByTargetID(ctx, targetId, amount)
 	fmt.Printf("commands[] =%v", cs)
 	for _, c := range cs {
 		assert.NotEmpty(t, c)

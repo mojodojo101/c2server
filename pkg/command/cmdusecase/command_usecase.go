@@ -41,7 +41,7 @@ func (cu *commandUsecase) ListCommandsByTargetID(ctx context.Context, tId, amoun
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
 	defer cancel()
 
-	cmds, err := cu.commandRepo.GetByTargetID(cctx, amount, tId)
+	cmds, err := cu.commandRepo.GetByTargetID(cctx, tId, amount)
 	return cmds, err
 
 }

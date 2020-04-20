@@ -5,6 +5,7 @@ package activebeacondb
 import (
 	"context"
 	"database/sql"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
@@ -33,10 +34,10 @@ func (r *sqlActiveBeaconRepo) CreateTable(ctx context.Context) error {
 		cmd_id BIGINT,
 		cmd CHAR(4096),
 		token CHAR(128),
-		ping FLOAT(53),
+		ping BIGINT,
 		c2m INT,
 		pm INT,
-		missed_pings INT,
+		missed_pings BIGINT,
 		created_at TIMESTAMP,
 		updated_at TIMESTAMP)`
 
@@ -58,14 +59,15 @@ func (r *sqlActiveBeaconRepo) GetByID(ctx context.Context, id int64) (*models.Ac
 }
 
 func (r *sqlActiveBeaconRepo) GetByParentID(ctx context.Context, pId int64) (*models.ActiveBeacon, error) {
-	//change this later mojo!!!!!!!
 	query := `SELECT * FROM active_beacon WHERE p_id=$1`
 	return r.getOneItem(ctx, query, pId)
 }
-
+func (r *sqlActiveBeaconRepo) GetAllActiveBeacons(ctx context.Context, amount int64) ([]models.ActiveBeacon, error) {
+	query := `SELECT * FROM active_beacon ORDER BY id DESC`
+	return r.getAllItems(ctx, query, amount)
+}
 func (r *sqlActiveBeaconRepo) DeleteByID(ctx context.Context, id int64) error {
-	//change this later mojo!!!!!!!
-	query := `SELECT FROM active_beacon WHERE id=$1`
+	query := `DELETE FROM active_beacon WHERE id=$1`
 
 	_, err := r.execQuery(ctx, query, id)
 
@@ -73,6 +75,7 @@ func (r *sqlActiveBeaconRepo) DeleteByID(ctx context.Context, id int64) error {
 
 }
 
+//simply updates all values i might want to change this later
 func (r *sqlActiveBeaconRepo) Update(ctx context.Context, b *models.ActiveBeacon) error {
 
 	query := `Update active_beacon set b_id=$1,p_id=$2,t_id=$3,cmd_id=$4,cmd=$5,token=$6,ping=$7,c2m=$8,pm=$9,missed_pings=$10,created_at=$11,updated_at=$12 where id = $13`
@@ -135,29 +138,32 @@ func (r *sqlActiveBeaconRepo) getOneItem(ctx context.Context, query string, args
 
 	row := stmt.QueryRowContext(ctx, args...)
 
-	b := &models.ActiveBeacon{}
+	ab := &models.ActiveBeacon{}
 
 	err = row.Scan(
-		&b.Id,
-		&b.BId,
-		&b.PId,
-		&b.TId,
-		&b.CmdId,
-		&b.Cmd,
-		&b.Token,
-		&b.Ping,
-		&b.C2m,
-		&b.Pm,
-		&b.MissedPings,
-		&b.CreatedAt,
-		&b.UpdatedAt)
+		&ab.Id,
+		&ab.BId,
+		&ab.PId,
+		&ab.TId,
+		&ab.CmdId,
+		&ab.Cmd,
+		&ab.Token,
+		&ab.Ping,
+		&ab.C2m,
+		&ab.Pm,
+		&ab.MissedPings,
+		&ab.CreatedAt,
+		&ab.UpdatedAt)
 
 	if err != nil {
 		logrus.Error(err)
 		return nil, err
 	}
 
-	return b, nil
+	ab.Cmd = strings.TrimRight(ab.Cmd, " ")
+	ab.Token = strings.TrimRight(ab.Token, " ")
+
+	return ab, nil
 }
 
 func (r *sqlActiveBeaconRepo) addItem(ctx context.Context, query string, args ...interface{}) (int64, error) {
@@ -187,7 +193,6 @@ func (r *sqlActiveBeaconRepo) addItem(ctx context.Context, query string, args ..
 
 // executes command and returns rows affected and error
 func (r *sqlActiveBeaconRepo) execQuery(ctx context.Context, query string, args ...interface{}) (int64, error) {
-
 	tx, err := r.DB.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {
 		logrus.Error(err)
@@ -209,4 +214,45 @@ func (r *sqlActiveBeaconRepo) execQuery(ctx context.Context, query string, args 
 
 	return rows, nil
 
+}
+
+func (r *sqlActiveBeaconRepo) getAllItems(ctx context.Context, query string, amount int64, args ...interface{}) ([]models.ActiveBeacon, error) {
+	rows, err := r.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		logrus.Error(err)
+		return nil, err
+	}
+	defer rows.Close()
+	abs := make([]models.ActiveBeacon, amount)
+	for i, _ := range abs {
+		rows.Next()
+		err = rows.Scan(
+			&abs[i].Id,
+			&abs[i].BId,
+			&abs[i].PId,
+			&abs[i].TId,
+			&abs[i].CmdId,
+			&abs[i].Cmd,
+			&abs[i].Token,
+			&abs[i].Ping,
+			&abs[i].C2m,
+			&abs[i].Pm,
+			&abs[i].MissedPings,
+			&abs[i].CreatedAt,
+			&abs[i].UpdatedAt,
+		)
+
+		if err != nil {
+			logrus.Error(err)
+			if i != 0 {
+				abs = append(abs[:i])
+				return abs, nil
+			}
+			return nil, err
+		}
+
+		abs[i].Cmd = strings.TrimRight(abs[i].Cmd, " ")
+		abs[i].Token = strings.TrimRight(abs[i].Token, " ")
+	}
+	return abs, nil
 }

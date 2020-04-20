@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/mojodojo101/c2server/config"
+	"github.com/mojodojo101/c2server/pkg/activebeacon"
 	"github.com/mojodojo101/c2server/pkg/client"
 	"github.com/mojodojo101/c2server/pkg/models"
 	"github.com/mojodojo101/c2server/pkg/target"
@@ -11,17 +12,26 @@ import (
 	"time"
 )
 
+//DISCLAIMER
+//this might be a very bad way to do the core domain logic, this is my first real go project and i am still trying to figure stuff out
+// it might be better to just include the repositorys instead of going through multiple layers of usecases
+//pros of doing it the way i implemented it:
+//you can resuse some function calls and dont have to rewrite a bunch of code
+//cons:
+//complicated and no seperation of core logic for this module
 type clientUsecase struct {
-	clientRepo     client.Repository
-	targetUsecase  target.Usecase
-	contextTimeout time.Duration
+	clientRepo          client.Repository
+	targetUsecase       target.Usecase
+	activeBeaconUsecase activebeacon.Usecase
+	contextTimeout      time.Duration
 }
 
-func NewClientUsecase(cr client.Repository, tu target.Usecase, timeout time.Duration) client.Usecase {
+func NewClientUsecase(cr client.Repository, tu target.Usecase, au activebeacon.Usecase, timeout time.Duration) client.Usecase {
 	return &clientUsecase{
-		clientRepo:     cr,
-		targetUsecase:  tu,
-		contextTimeout: timeout,
+		clientRepo:          cr,
+		targetUsecase:       tu,
+		activeBeaconUsecase: au,
+		contextTimeout:      timeout,
 	}
 }
 
@@ -33,7 +43,7 @@ func (cu *clientUsecase) CreateTable(ctx context.Context) error {
 	return err
 
 }
-func (cu *clientUsecase) AddNewCommad(ctx context.Context, c *models.Client, cmd *models.Command) error {
+func (cu *clientUsecase) AddNewCommand(ctx context.Context, c *models.Client, cmd *models.Command) error {
 
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
 	defer cancel()
@@ -46,17 +56,26 @@ func (cu *clientUsecase) AddNewCommad(ctx context.Context, c *models.Client, cmd
 	return err
 
 }
-func (cu *clientUsecase) RetrieveCommandResponse(ctx context.Context, c *models.Client, tId, cmdId int64) (string, error) {
+func (cu *clientUsecase) RetrieveCommandResponse(ctx context.Context, c *models.Client, cmdId int64) (string, error) {
 
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
 	defer cancel()
-	t, err := cu.targetUsecase.GetByID(cctx, tId)
-	if err != nil {
-		return "", err
-	}
-	data, err := cu.targetUsecase.FetchCmdResponse(cctx, t, cmdId)
+	data, err := cu.targetUsecase.FetchCmdResponse(cctx, cmdId)
 
 	return string(data), err
+
+}
+func (cu *clientUsecase) ListActiveBeacons(ctx context.Context, c *models.Client, amount int64) ([]models.ActiveBeacon, error) {
+
+	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
+	defer cancel()
+
+	err := cu.isValidClient(cctx, c)
+	if err != nil {
+		return nil, err
+	}
+	ab, err := cu.activeBeaconUsecase.ListActiveBeacons(cctx, amount)
+	return ab, err
 
 }
 func (cu *clientUsecase) ListTargets(ctx context.Context, c *models.Client, amount int64) ([]models.Target, error) {
@@ -81,7 +100,9 @@ func (cu *clientUsecase) ListTargetCommands(ctx context.Context, c *models.Clien
 	if err != nil {
 		return nil, err
 	}
+
 	t, err := cu.targetUsecase.GetByID(cctx, tId)
+
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +110,131 @@ func (cu *clientUsecase) ListTargetCommands(ctx context.Context, c *models.Clien
 	return cmds, err
 
 }
+func (cu *clientUsecase) UpdateCommand(ctx context.Context, c *models.Client, cmd *models.Command) error {
 
+	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
+	defer cancel()
+
+	err := cu.isValidClient(cctx, c)
+	if err != nil {
+		return err
+	}
+	t, err := cu.targetUsecase.GetByID(cctx, cmd.TId)
+	if err != nil {
+		return err
+	}
+	command, err := cu.targetUsecase.GetCommandById(cctx, t, cmd.Id)
+
+	if err != nil {
+		return err
+	}
+	command.Cmd = cmd.Cmd
+	err = cu.targetUsecase.UpdateCommand(cctx, t, command)
+	return err
+
+}
+func (cu *clientUsecase) UpdateActiveBeacon(ctx context.Context, c *models.Client, ab *models.ActiveBeacon) error {
+
+	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
+	defer cancel()
+
+	err := cu.isValidClient(cctx, c)
+	if err != nil {
+		return err
+	}
+
+	activeb, err := cu.activeBeaconUsecase.GetByID(cctx, ab.Id)
+
+	if err != nil {
+		return err
+	}
+	activeb.Ping = ab.Ping
+	err = cu.activeBeaconUsecase.Update(cctx, activeb)
+	return err
+
+}
+func (cu *clientUsecase) UpdateTarget(ctx context.Context, c *models.Client, t *models.Target) error {
+
+	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
+	defer cancel()
+
+	err := cu.isValidClient(cctx, c)
+	if err != nil {
+		return err
+	}
+
+	target, err := cu.targetUsecase.GetByID(cctx, t.Id)
+
+	if err != nil {
+		return err
+	}
+	target.HostName = t.HostName
+	target.Ipv4 = t.Ipv4
+	target.Ipv6 = t.Ipv6
+	target.UpdatedAt = time.Now()
+	err = cu.targetUsecase.Update(cctx, target)
+	return err
+
+}
+func (cu *clientUsecase) RemoveCommand(ctx context.Context, c *models.Client, tId, cmdId int64) error {
+
+	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
+	defer cancel()
+
+	err := cu.isValidClient(cctx, c)
+	if err != nil {
+		return err
+	}
+
+	t, err := cu.targetUsecase.GetByID(cctx, tId)
+
+	if err != nil {
+		return err
+	}
+	err = cu.targetUsecase.RemoveCommand(cctx, t, cmdId)
+	return err
+
+}
+
+func (cu *clientUsecase) RemoveTarget(ctx context.Context, c *models.Client, tId int64) error {
+
+	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
+	defer cancel()
+
+	err := cu.isValidClient(cctx, c)
+	if err != nil {
+		return err
+	}
+
+	t, err := cu.targetUsecase.GetByID(cctx, tId)
+
+	if err != nil {
+		return err
+	}
+	err = cu.targetUsecase.Delete(cctx, t)
+	return err
+
+}
+
+func (cu *clientUsecase) RemoveActiveBeacon(ctx context.Context, c *models.Client, abId int64) error {
+
+	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)
+	defer cancel()
+
+	err := cu.isValidClient(cctx, c)
+	if err != nil {
+		return err
+	}
+
+	ab, err := cu.activeBeaconUsecase.GetByID(cctx, abId)
+
+	if err != nil {
+		return err
+	}
+	err = cu.activeBeaconUsecase.Delete(cctx, ab)
+	return err
+
+}
 func (cu *clientUsecase) AddNewTarget(ctx context.Context, c *models.Client, t *models.Target) error {
 
 	cctx, cancel := context.WithTimeout(ctx, cu.contextTimeout)

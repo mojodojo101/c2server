@@ -12,6 +12,7 @@ type Repository interface {
 	DeleteByID(ctx context.Context, id int64) error
 	CreateNewBeacon(ctx context.Context, m *models.ActiveBeacon) error
 	Update(ctx context.Context, m *models.ActiveBeacon) error
+	GetAllActiveBeacons(ctx context.Context, amount int64) ([]models.ActiveBeacon, error)
 	CreateTable(ctx context.Context) error
 	DropTable(ctx context.Context) error
 }

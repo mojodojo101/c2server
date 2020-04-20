@@ -9,11 +9,11 @@ type Target struct {
 
 	Ipv6 string `json:"ipv6"`
 
-	HostName string `json:"host_name"`
+	HostName string `json:"hostName"`
 
 	Path string `json:"path"`
 
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt time.Time `json:"createdAt"`
 
-	UpdatedAt time.Time `json:"updated_at"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }

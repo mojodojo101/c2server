@@ -68,7 +68,7 @@ func TestRegister(t *testing.T) {
 	a.Pm = models.HTTP
 	a.C2m = models.HTTP
 	a.Token = "23910809213"
-	a.Ping = float64(10.0)
+	a.Ping = int64(10)
 
 	err = au.Register(ctx, &a)
 	fmt.Printf("a.Id = %v\n", a.Id)
@@ -103,7 +103,7 @@ func TestSetCmdExecuted(t *testing.T) {
 	a.Pm = models.HTTP
 	a.C2m = models.HTTP
 	a.Token = "mytoken"
-	a.Ping = float64(10.0)
+	a.Ping = int64(10)
 
 	err = au.SetCmdExecuted(ctx, &a, []byte("some response from the network"))
 
@@ -138,7 +138,7 @@ func TestUpdate(t *testing.T) {
 	a.Pm = models.HTTP
 	a.C2m = models.HTTP
 	a.Token = "23910809213"
-	a.Ping = float64(10.0)
+	a.Ping = int64(10)
 
 	err = au.Update(ctx, &a)
 	assert.NoError(t, err)

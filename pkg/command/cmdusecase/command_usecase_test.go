@@ -51,6 +51,26 @@ func TestGetNextCommand(t *testing.T) {
 
 }
 
+func TestListCommandsByTargetID(t *testing.T) {
+
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		panic(err)
+	}
+
+	cr := commanddb.NewSQLRepo(db)
+	ctx := context.Background()
+
+	cu := cmdusecase.NewCommandUsecase(cr, time.Second*2)
+
+	TId := int64(1)
+	amount := int64(20)
+
+	cmd, err := cu.ListCommandsByTargetID(ctx, TId, amount)
+	fmt.Printf("%v\n", cmd)
+	assert.NoError(t, err)
+
+}
 func TestUpdate(t *testing.T) {
 
 	db, err := sql.Open("postgres", connStr)

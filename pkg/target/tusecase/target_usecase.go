@@ -33,18 +33,19 @@ func (tu *targetUsecase) CreateTable(ctx context.Context) error {
 	return err
 
 }
-func (tu *targetUsecase) FetchCmdResponse(ctx context.Context, t *models.Target, cmdId int64) ([]byte, error) {
+func (tu *targetUsecase) FetchCmdResponse(ctx context.Context, cmdId int64) ([]byte, error) {
 	//probably wanna change this to io.Pipe
 	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
 	defer cancel()
 
-	c, err := tu.cmdUsecase.GetByID(cctx, cmdId)
+	cmd, err := tu.cmdUsecase.GetByID(cctx, cmdId)
 	if err != nil {
 		return nil, err
 	}
-	if c.Executed == false {
+	if cmd.Executed == false {
 		return nil, models.ErrNotExecuted
 	}
+	t, err := tu.GetByID(cctx, cmd.TId)
 	cmdPath := fmt.Sprintf("%v/%v", t.Path, cmdId)
 	data, err := ioutil.ReadFile(cmdPath)
 
@@ -76,11 +77,15 @@ func (tu *targetUsecase) SetCmdExecuted(ctx context.Context, t *models.Target, c
 	if err != nil {
 		return models.ErrItemNotFound
 	}
+	if c.Executed == true {
+		return nil
+	}
 	c.Executed = true
 	c.Executing = true
 	c.ExecutedAt = time.Now()
 	cmdPath := fmt.Sprintf("%v/%v", strings.TrimSpace(t.Path), cmdId)
 	fmt.Printf("path =%v", cmdPath)
+
 	err = ioutil.WriteFile(cmdPath, response, os.FileMode(0600))
 
 	if err != nil {
@@ -128,6 +133,43 @@ func (tu *targetUsecase) ListCommands(ctx context.Context, t *models.Target, amo
 	cmds, err := tu.cmdUsecase.ListCommandsByTargetID(cctx, t.Id, amount)
 
 	return cmds, err
+
+}
+
+func (tu *targetUsecase) GetCommandById(ctx context.Context, t *models.Target, cmdId int64) (*models.Command, error) {
+	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
+	defer cancel()
+	cmd, err := tu.cmdUsecase.GetByID(cctx, cmdId)
+	if err != nil {
+		return nil, models.ErrItemNotFound
+	}
+	return cmd, err
+}
+func (tu *targetUsecase) UpdateCommand(ctx context.Context, t *models.Target, cmd *models.Command) error {
+
+	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
+	defer cancel()
+
+	command, err := tu.cmdUsecase.GetByID(cctx, cmd.Id)
+	if err != nil {
+		return models.ErrItemNotFound
+	}
+	command.Cmd = cmd.Cmd
+	err = tu.cmdUsecase.Update(cctx, command)
+	return err
+
+}
+func (tu *targetUsecase) RemoveCommand(ctx context.Context, t *models.Target, cmdId int64) error {
+
+	cctx, cancel := context.WithTimeout(ctx, tu.contextTimeout)
+	defer cancel()
+
+	cmd, err := tu.cmdUsecase.GetByID(cctx, cmdId)
+	if err != nil {
+		return models.ErrItemNotFound
+	}
+	err = tu.cmdUsecase.Delete(cctx, cmd)
+	return err
 
 }
 func (tu *targetUsecase) ListTargets(ctx context.Context, amount int64) ([]models.Target, error) {

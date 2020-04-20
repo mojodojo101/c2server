@@ -7,7 +7,7 @@ type Command struct {
 	//unique id
 	Id int64 `json:"id"`
 
-	TId int64 `json:"target_id"`
+	TId int64 `json:"tId"`
 
 	//path to beacon template
 	Cmd string `json:"cmd"`
@@ -17,7 +17,7 @@ type Command struct {
 	//make sure there are no 2 beacons excuting the same command
 	Executing bool `json:"executing"`
 
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt time.Time `json:"createdAt"`
 
-	ExecutedAt time.Time `json:"executed_at"`
+	ExecutedAt time.Time `json:"executedAt"`
 }

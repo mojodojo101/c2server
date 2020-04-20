@@ -3,6 +3,7 @@ package commanddb
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -58,7 +59,7 @@ func (r *sqlCommandRepo) GetNextCommand(ctx context.Context, targetId int64) (*m
 	return r.getOneItem(ctx, query, targetId)
 }
 func (r *sqlCommandRepo) GetByTargetID(ctx context.Context, tId, amount int64) ([]models.Command, error) {
-	query := `SELECT * FROM command WHERE t_id=$1`
+	query := `SELECT * FROM command WHERE t_id=$1 ORDER BY id DESC`
 	return r.getItemsByValue(ctx, query, amount, tId)
 
 }
@@ -131,6 +132,7 @@ func (r *sqlCommandRepo) getOneItem(ctx context.Context, query string, args ...i
 }
 
 func (r *sqlCommandRepo) getItemsByValue(ctx context.Context, query string, amount int64, args ...interface{}) ([]models.Command, error) {
+	fmt.Printf("\nquery =%#v with args %#v and amount %#v\n", query, args, amount)
 	rows, err := r.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		logrus.Error(err)

