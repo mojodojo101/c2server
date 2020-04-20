@@ -18,12 +18,12 @@ TODO:
 
 * get postgresql repo
 
-```bash
+```sh
 sudo apt update
 sudo apt install postgresql postgresql-contrib
 ```
 * switch user to postgresql and create roles and database
-```bash
+```sh
 
 sudo su postgres
 
@@ -35,7 +35,7 @@ createdb c2db
 ```
 
 * set up priviliges and password
-```bash
+```sh
 psql
 grant all privileges on database c2db to c2admin;
 alter user c2admin password 'mojodojo101+';
@@ -61,8 +61,10 @@ host    replication     all             ::1/128                 md5
 
 ```
 
-```bash
+```sh
+
 systemctl restart postgresql.service
+
 ```
 
 if you used different accounts names and passwords change the [config.go](https://github.com/mojodojo101/c2server/blob/master/config/config.go)
